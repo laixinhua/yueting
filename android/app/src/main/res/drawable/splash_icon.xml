@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 启动图标：与背景同色圆底，避免系统默认白边 -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/splash_background" />
+            <size
+                android:width="108dp"
+                android:height="108dp" />
+        </shape>
+    </item>
+    <item
+        android:drawable="@drawable/ic_launcher_foreground"
+        android:gravity="center"
+        android:width="72dp"
+        android:height="72dp" />
+</layer-list>
