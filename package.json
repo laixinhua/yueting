@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "build:app": "tsc -b && vite build --mode capacitor",
     "cap:sync": "npm run build:app && npx cap sync android",
-    "android:apk": "npm run cap:sync && cd android && .\\gradlew.bat assembleDebug && cd .. && node -e \"require('fs').mkdirSync('release',{recursive:true});require('fs').copyFileSync('android/app/build/outputs/apk/debug/app-debug.apk','release/悦听-debug.apk')\"",
+    "android:apk": "npm run cap:sync && cd android && .\\gradlew.bat assembleDebug && cd .. && node -e \"require('fs').mkdirSync('release',{recursive:true});require('fs').copyFileSync('android/app/build/outputs/apk/debug/app-debug.apk','release/yueting-debug.apk')\"",
     "android:open": "npx cap open android",
     "release:github": "powershell -ExecutionPolicy Bypass -File scripts/publish-github-release.ps1",
     "lint": "eslint .",

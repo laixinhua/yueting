@@ -156,12 +156,12 @@ npm run android:apk
 
 | 输出路径 | 说明 |
 |----------|------|
-| `release/悦听-debug.apk` | 便于传到手机的调试包 |
+| `release/yueting-debug.apk` | 便于传到手机的调试包 |
 | `android/app/build/outputs/apk/debug/app-debug.apk` | Gradle 原始输出 |
 
 ### 安装到手机
 
-1. 将 `release/悦听-debug.apk` 传到手机
+1. 将 `release/yueting-debug.apk` 传到手机
 2. 允许「安装未知来源应用」
 3. 安装并打开「悦听」
 
@@ -169,6 +169,28 @@ npm run android:apk
 
 修改代码后重新打包：`npm run android:apk`  
 用 Android Studio 打开工程：`npm run android:open`
+
+### 发布到 GitHub Releases（手机直链下载）
+
+1. 安装并登录 GitHub CLI（只需一次）：
+
+```bash
+gh auth login
+```
+
+2. 打包并创建 Release（自动上传 APK）：
+
+```bash
+npm run release:github
+```
+
+成功后终端会输出 **Release 页面** 和 **APK 直链**，手机浏览器打开直链即可下载安装。
+
+默认仓库名 `yueting`（`https://github.com/你的用户名/yueting`）。若需指定名称：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/publish-github-release.ps1 -Repo 你的仓库名
+```
 
 ---
 
