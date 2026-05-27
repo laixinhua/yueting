@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { useBackHandler } from '../context/BackNavigationContext'
 import { useShellOverlayClass } from '../hooks/useShellOverlay'
 
 const DISMISS_DRAG_PX = 72
@@ -24,6 +25,11 @@ export function BottomDrawer({ onClose, children }: BottomDrawerProps) {
       document.body.style.overflow = prev
     }
   }, [])
+
+  useBackHandler(true, () => {
+    onClose()
+    return true
+  })
 
   const finishDrag = useCallback(() => {
     draggingRef.current = false

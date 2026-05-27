@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { useBackHandler } from '../context/BackNavigationContext'
 import { useFavoritesContext } from '../context/FavoritesContext'
 import { usePlayer } from '../context/PlayerContext'
+import { BackButton } from '../components/BackButton'
 import { AlbumCover } from '../components/AlbumCover'
 import { InlineLyrics } from '../components/InlineLyrics'
 import { LyricsSettingsPanel } from '../components/LyricsSettingsPanel'
@@ -49,6 +51,11 @@ export function PlayerScreen() {
 
   const modeMeta = playModeMeta[playMode]
 
+  useBackHandler(isPlayerOpen, () => {
+    closePlayer()
+    return true
+  })
+
   if (!isPlayerOpen) return null
 
   const liked = isFavorite(currentSong.id)
@@ -58,9 +65,12 @@ export function PlayerScreen() {
       <div className={`${shellClass} flex flex-col overflow-hidden bg-surface`}>
         <div className="relative flex flex-col h-full min-h-0 safe-bottom">
           <header className="shrink-0 flex items-center justify-between px-4 pt-10 pb-2">
-            <button type="button" onClick={closePlayer} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors" aria-label="返回">
+            <BackButton
+              aria-label="返回"
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
+            >
               <IconChevronLeft className="w-6 h-6" />
-            </button>
+            </BackButton>
             <p className="text-xs font-medium text-white/60 tracking-widest">{isLoading ? '加载中' : '正在播放'}</p>
             <button type="button" onClick={() => setMenuOpen(true)} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors" aria-label="更多">
               <IconMore className="w-5 h-5 text-white/70" />

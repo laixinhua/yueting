@@ -215,13 +215,13 @@ GitHub 服务器在海外，**5MB 的 APK 在手机上直连 GitHub 经常只有
 | **代理加速链接** | 在官方直链前加镜像前缀（第三方服务，可用性不保证） |
 | **同一 WiFi 预览** | 开发阶段用 `npm run dev`，手机访问电脑局域网地址，不必每次下 APK |
 
-当前版本 **v0.5.2** 链接：
+当前版本 **v0.5.3** 链接：
 
 | 类型 | 地址 |
 |------|------|
-| 官方直链 | https://github.com/laixinhua/yueting/releases/download/v0.5.2/yueting-debug.apk |
-| 加速镜像（可试） | https://ghproxy.net/https://github.com/laixinhua/yueting/releases/download/v0.5.2/yueting-debug.apk |
-| Release 页 | https://github.com/laixinhua/yueting/releases/tag/v0.5.2 |
+| 官方直链 | https://github.com/laixinhua/yueting/releases/download/v0.5.3/yueting-debug.apk |
+| 加速镜像（可试） | https://ghproxy.net/https://github.com/laixinhua/yueting/releases/download/v0.5.3/yueting-debug.apk |
+| Release 页 | https://github.com/laixinhua/yueting/releases/tag/v0.5.3 |
 
 若镜像也慢，优先用 **电脑下载后微信发文件** 到手机安装。
 

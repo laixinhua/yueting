@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useBackHandler } from '../context/BackNavigationContext'
 import { useShellOverlayClass } from '../hooks/useShellOverlay'
 
 interface ConfirmDialogProps {
@@ -23,6 +24,11 @@ export function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   const shellClass = useShellOverlayClass('above')
+
+  useBackHandler(open, () => {
+    onCancel()
+    return true
+  })
 
   useEffect(() => {
     if (!open) return

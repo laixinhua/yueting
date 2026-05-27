@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react'
+import { useBackHandler } from '../context/BackNavigationContext'
 import { usePlayer } from '../context/PlayerContext'
 import { useShellOverlayClass } from '../hooks/useShellOverlay'
 import { AlbumCover } from './AlbumCover'
+import { BackButton } from './BackButton'
 import { IconChevronLeft, IconPause, IconPlay } from './icons'
 
 export function QueuePanel() {
@@ -23,17 +25,20 @@ export function QueuePanel() {
     activeRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [queueIndex])
 
+  useBackHandler(true, () => {
+    closeQueue()
+    return true
+  })
+
   return (
     <div className={`${shellClass} flex flex-col bg-surface`}>
       <header className="shrink-0 flex items-center gap-3 px-4 pt-12 pb-4 border-b border-white/5">
-        <button
-          type="button"
-          onClick={closeQueue}
-          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
+        <BackButton
           aria-label="返回"
+          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
         >
           <IconChevronLeft className="w-6 h-6" />
-        </button>
+        </BackButton>
         <h1 className="text-xl font-bold text-white flex-1">播放队列 ({queue.length})</h1>
         {queue.length > 0 ? (
           <button

@@ -4,6 +4,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { FavoritesProvider } from './context/FavoritesContext'
 import { LyricsAlignProvider } from './context/LyricsAlignContext'
 import { PlaylistsProvider } from './context/PlaylistsContext'
+import { BackNavigationProvider } from './context/BackNavigationContext'
 import { PlayerProvider } from './context/PlayerContext'
 import { RecentPlaysProvider } from './context/RecentPlaysContext'
 import { SongCatalogProvider } from './context/SongCatalogContext'
@@ -18,9 +19,11 @@ export default function App() {
               <LyricsAlignProvider>
                 <FavoritesProvider>
                   <PlayerProvider>
-                    <div className="h-full w-full" data-app-root>
-                      <AppShell />
-                    </div>
+                    <BackNavigationProvider>
+                      <div className="h-full w-full" data-app-root>
+                        <AppShell />
+                      </div>
+                    </BackNavigationProvider>
                   </PlayerProvider>
                 </FavoritesProvider>
               </LyricsAlignProvider>
