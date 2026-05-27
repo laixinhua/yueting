@@ -6,22 +6,19 @@ import {
 } from '../data/neteaseCharts'
 import type { Playlist } from '../types'
 import { readFeaturedPlaylistsCache, writeFeaturedPlaylistsCache } from '../utils/neteaseCache'
+import { pickFeaturedItems } from '../utils/neteaseFeatured'
 import { buildFeaturedPlaylistCard } from '../utils/neteasePlaylistLoad'
 
 async function loadFeaturedPlaylists(): Promise<Playlist[]> {
   const cached = readFeaturedPlaylistsCache()
   if (cached && cached.length > 0) return cached
 
-  const picked: Playlist[] = []
-  for (const item of NETEASE_DAILY_PLAYLIST_CANDIDATES) {
-    if (picked.length >= FEATURED_DAILY_PLAYLIST_COUNT) break
-    try {
-      const card = await buildFeaturedPlaylistCard(item)
-      if (card) picked.push(card)
-    } catch {
-      /* 单个失败跳过 */
-    }
-  }
+  const picked = await pickFeaturedItems(
+    NETEASE_DAILY_PLAYLIST_CANDIDATES,
+    FEATURED_DAILY_PLAYLIST_COUNT,
+    (item) => buildFeaturedPlaylistCard(item),
+    3,
+  )
 
   if (picked.length > 0) writeFeaturedPlaylistsCache(picked)
   return picked

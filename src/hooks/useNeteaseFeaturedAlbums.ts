@@ -1,27 +1,21 @@
 import { useEffect, useState } from 'react'
-import { EbnrApiError, getAlbumMeta } from '../api/ebnr'
+import { EbnrApiError } from '../api/ebnr'
 import { FEATURED_ALBUM_COUNT, NETEASE_FEATURED_ALBUM_CANDIDATES } from '../data/neteaseAlbums'
 import type { Playlist } from '../types'
-import { buildNeteaseAlbumCard } from '../utils/neteaseAlbum'
 import { readFeaturedAlbumsCache, writeFeaturedAlbumsCache } from '../utils/neteaseCache'
-import { probeAlbumRecommendable } from '../utils/neteasePlaylistLoad'
+import { pickFeaturedItems } from '../utils/neteaseFeatured'
+import { buildFeaturedAlbumCard } from '../utils/neteasePlaylistLoad'
 
 async function loadFeaturedAlbums(): Promise<Playlist[]> {
   const cached = readFeaturedAlbumsCache()
   if (cached && cached.length > 0) return cached
 
-  const picked: Playlist[] = []
-  for (const item of NETEASE_FEATURED_ALBUM_CANDIDATES) {
-    if (picked.length >= FEATURED_ALBUM_COUNT) break
-    try {
-      const ok = await probeAlbumRecommendable(item.id)
-      if (!ok) continue
-      const meta = await getAlbumMeta(item.id)
-      picked.push(buildNeteaseAlbumCard(meta, item.gradient))
-    } catch {
-      /* 单个失败跳过 */
-    }
-  }
+  const picked = await pickFeaturedItems(
+    NETEASE_FEATURED_ALBUM_CANDIDATES,
+    FEATURED_ALBUM_COUNT,
+    (item) => buildFeaturedAlbumCard(item),
+    3,
+  )
 
   if (picked.length > 0) writeFeaturedAlbumsCache(picked)
   return picked

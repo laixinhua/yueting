@@ -31,12 +31,13 @@ export function HomeScreen() {
   const { playSong, openPlayer } = usePlayer()
   const { playlists: dailyPlaylists, loading: dailyLoading, error: dailyError } = useNeteaseFeaturedPlaylists()
   const { albums: featuredAlbums, loading: albumsLoading, error: albumsError } = useNeteaseFeaturedAlbums()
+  const featuredReady = !dailyLoading && !albumsLoading
   const {
     songs: recommendedSongs,
     loading: recommendLoading,
     error: recommendError,
     refresh: refreshRecommended,
-  } = useNeteaseRecommendedSongs()
+  } = useNeteaseRecommendedSongs({ enabled: featuredReady })
   const { upsertNeteaseSongs } = useSongCatalog()
   const { recentSongs } = useRecentPlaysContext()
   const [detailPlaylist, setDetailPlaylist] = useState<Playlist | null>(null)

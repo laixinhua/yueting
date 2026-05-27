@@ -12,11 +12,11 @@ export const PLAYABLE_PROBE_NONE_TTL_MS = 2 * 60 * 60 * 1000
 export const PLAYABLE_URL_TTL_MS = PLAYABLE_PROBE_OK_TTL_MS
 export const PLAYABLE_NONE_TTL_MS = PLAYABLE_PROBE_NONE_TTL_MS
 
-/** 歌单/专辑曲目、首页池：6h */
-export const NETEASE_LIST_CACHE_TTL_MS = 6 * 60 * 60 * 1000
+/** 歌单/专辑曲目、首页池：12h */
+export const NETEASE_LIST_CACHE_TTL_MS = 12 * 60 * 60 * 1000
 
-/** 每日推荐卡片、推荐专辑列表：12h */
-export const FEATURED_LIST_CACHE_TTL_MS = 12 * 60 * 60 * 1000
+/** 每日推荐卡片、推荐专辑列表：24h */
+export const FEATURED_LIST_CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
 /** 歌单/专辑是否值得推荐的探测结果：12h */
 export const FEATURED_PROBE_CACHE_TTL_MS = 12 * 60 * 60 * 1000

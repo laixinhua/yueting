@@ -2,7 +2,8 @@ import type { EbnrTrack } from '../types/ebnr'
 import type { Song } from '../types'
 import { ebnrTrackToSong, isNeteaseSongPlayable, parseNeteaseId } from './neteaseSong'
 
-export const PLAYABLE_CHECK_CONCURRENCY = 3
+/** 可播探测并发（略高以缩短首页加载，仍控制同时请求数） */
+export const PLAYABLE_CHECK_CONCURRENCY = 5
 /** 热歌/推荐池最多预检条数（够换一换即可） */
 export const PLAYABLE_POOL_LIMIT = 60
 /** 首页推荐歌单/专辑至少需要的可播放曲目数 */

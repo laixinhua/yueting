@@ -1,6 +1,8 @@
 import { useRef, useEffect, type ReactNode } from 'react'
 
-const DRAG_THRESHOLD = 8
+const DRAG_THRESHOLD = 10
+/** 横向位移需明显大于纵向才视为横滑（避免上拉时误触横滚） */
+const HORIZONTAL_BIAS = 1.35
 
 interface HorizontalScrollProps {
   children: ReactNode
@@ -14,8 +16,11 @@ export function HorizontalScroll({ children, className = '' }: HorizontalScrollP
     dragging: false,
     moved: false,
     startX: 0,
+    startY: 0,
     scrollLeft: 0,
     pointerId: -1,
+    /** 首次超过阈值后锁定轴向，避免与页面纵向滚动抢手势 */
+    axis: null as 'x' | 'y' | null,
   })
 
   useEffect(() => {
@@ -31,23 +36,44 @@ export function HorizontalScroll({ children, className = '' }: HorizontalScrollP
     }
 
     const onPointerDown = (e: PointerEvent) => {
+      // 触摸交给原生 overflow 横滚，纵向可正常传给外层
+      if (e.pointerType === 'touch') return
       if (e.pointerType === 'mouse' && e.button !== 0) return
       dragRef.current = {
         active: true,
         dragging: false,
         moved: false,
         startX: e.clientX,
+        startY: e.clientY,
         scrollLeft: el.scrollLeft,
         pointerId: e.pointerId,
+        axis: null,
       }
     }
 
     const onPointerMove = (e: PointerEvent) => {
       if (!dragRef.current.active || e.pointerId !== dragRef.current.pointerId) return
       const dx = e.clientX - dragRef.current.startX
+      const dy = e.clientY - dragRef.current.startY
 
       if (!dragRef.current.dragging) {
-        if (Math.abs(dx) < DRAG_THRESHOLD) return
+        if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return
+
+        if (dragRef.current.axis === null) {
+          if (Math.abs(dy) >= Math.abs(dx) * HORIZONTAL_BIAS) {
+            dragRef.current.active = false
+            dragRef.current.axis = 'y'
+            return
+          }
+          if (Math.abs(dx) >= Math.abs(dy) * HORIZONTAL_BIAS) {
+            dragRef.current.axis = 'x'
+          } else {
+            return
+          }
+        }
+
+        if (dragRef.current.axis !== 'x') return
+
         dragRef.current.dragging = true
         dragRef.current.moved = true
         el.classList.add('is-dragging')
@@ -65,6 +91,7 @@ export function HorizontalScroll({ children, className = '' }: HorizontalScrollP
       if (!dragRef.current.active || e.pointerId !== dragRef.current.pointerId) return
       dragRef.current.active = false
       dragRef.current.dragging = false
+      dragRef.current.axis = null
       el.classList.remove('is-dragging')
       try {
         el.releasePointerCapture(e.pointerId)

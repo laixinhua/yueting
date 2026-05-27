@@ -20,7 +20,8 @@ async function fetchRecommendPool(force: boolean): Promise<Song[]> {
   return pool
 }
 
-export function useNeteaseRecommendedSongs() {
+export function useNeteaseRecommendedSongs(options?: { enabled?: boolean }) {
+  const enabled = options?.enabled !== false
   const initialPool = readRecommendPoolCache() ?? []
   const poolRef = useRef<Song[]>(initialPool)
   const [songs, setSongs] = useState<Song[]>(() =>
@@ -61,8 +62,9 @@ export function useNeteaseRecommendedSongs() {
   }, [pickDisplay])
 
   useEffect(() => {
+    if (!enabled) return
     void loadPool()
-  }, [loadPool])
+  }, [loadPool, enabled])
 
   const refresh = useCallback(() => {
     if (poolRef.current.length > 0) {

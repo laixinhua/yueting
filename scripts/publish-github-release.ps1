@@ -127,9 +127,10 @@ Write-Host ""
 Write-Host "APK download (open on phone):" -ForegroundColor Green
 foreach ($asset in $json.assets) {
   if ($asset.name -like "*.apk") {
-    Write-Host $asset.browser_download_url
+    $apkUrl = if ($asset.browser_download_url) { $asset.browser_download_url } else { $asset.url }
+    Write-Host $apkUrl
     Write-Host ""
     Write-Host "Mirror (if GitHub is slow in CN):" -ForegroundColor Yellow
-    Write-Host ("https://ghproxy.net/{0}" -f $asset.browser_download_url)
+    Write-Host ("https://ghproxy.net/{0}" -f $apkUrl)
   }
 }

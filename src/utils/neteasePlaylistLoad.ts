@@ -10,12 +10,13 @@ import {
   writePlaylistCache,
   writePlaylistProbeCache,
 } from './neteaseCache'
-import { buildNeteaseAlbumPlaylist } from './neteaseAlbum'
+import { buildNeteaseAlbumCard, buildNeteaseAlbumPlaylist } from './neteaseAlbum'
 import { buildNeteasePlaylist, buildNeteasePlaylistCard } from './neteasePlaylist'
 import { FEATURED_MIN_PLAYABLE, filterPlayableNeteaseSongs } from './neteasePlayable'
 import { ebnrTrackToSong } from './neteaseSong'
 
-const PROBE_SAMPLE_SIZE = 18
+/** 探测样本数（需 ≥ FEATURED_MIN_PLAYABLE，略小以减少 /audio 请求） */
+const PROBE_SAMPLE_SIZE = 12
 
 const loadingPlaylists = new Map<number, Promise<Playlist>>()
 const loadingAlbums = new Map<number, Promise<Playlist>>()
@@ -95,9 +96,37 @@ export async function loadCachedOrFreshAlbum(albumId: number, gradient: string):
 export async function buildFeaturedPlaylistCard(
   item: { id: number; label: string; gradient: string },
 ): Promise<Playlist | null> {
-  const ok = await probePlaylistRecommendable(item.id)
-  if (!ok) return null
+  const probed = readPlaylistProbeCache(item.id)
+  if (probed === false) return null
 
-  const meta = await getPlaylist(item.id)
+  const [meta, tracks] = await Promise.all([getPlaylist(item.id), getPlaylistTracks(item.id)])
+
+  if (probed !== true) {
+    const sample = tracks.slice(0, PROBE_SAMPLE_SIZE).map(ebnrTrackToSong)
+    const playable = await filterPlayableNeteaseSongs(sample, { limit: FEATURED_MIN_PLAYABLE })
+    const ok = playable.length >= FEATURED_MIN_PLAYABLE
+    writePlaylistProbeCache(item.id, ok)
+    if (!ok) return null
+  }
+
   return buildNeteasePlaylistCard(meta, item.gradient, item.label)
+}
+
+export async function buildFeaturedAlbumCard(
+  item: { id: number; gradient: string },
+): Promise<Playlist | null> {
+  const probed = readAlbumProbeCache(item.id)
+  if (probed === false) return null
+
+  const detail = await getAlbumDetail(item.id)
+
+  if (probed !== true) {
+    const sample = (detail.songs ?? []).slice(0, PROBE_SAMPLE_SIZE).map(ebnrTrackToSong)
+    const playable = await filterPlayableNeteaseSongs(sample, { limit: FEATURED_MIN_PLAYABLE })
+    const ok = playable.length >= FEATURED_MIN_PLAYABLE
+    writeAlbumProbeCache(item.id, ok)
+    if (!ok) return null
+  }
+
+  return buildNeteaseAlbumCard(detail, item.gradient)
 }

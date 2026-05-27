@@ -9,8 +9,9 @@ let draining = false
 let paused = false
 let generation = 0
 
-const IDLE_DELAY_MS = 400
-const BETWEEN_TASKS_MS = 350
+/** 首页主内容加载后再预取，间隔略大以免与首屏抢带宽 */
+const IDLE_DELAY_MS = 1200
+const BETWEEN_TASKS_MS = 500
 
 function delay(ms: number) {
   return new Promise<void>((resolve) => window.setTimeout(resolve, ms))
