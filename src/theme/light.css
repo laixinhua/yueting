@@ -1,0 +1,140 @@
+/* 白天模式：覆盖常用 Tailwind 语义色 */
+html.light body,
+html.light #root {
+  background-color: var(--app-bg);
+  color: var(--app-fg);
+}
+
+html.light .glass {
+  background: var(--app-glass);
+  border-color: var(--app-border);
+}
+
+html.light .text-white {
+  color: var(--app-fg) !important;
+}
+
+html.light .text-white\/30 {
+  color: rgb(24 24 27 / 0.35) !important;
+}
+
+html.light .text-white\/40 {
+  color: var(--app-fg-subtle) !important;
+}
+
+html.light .text-white\/50 {
+  color: var(--app-fg-muted) !important;
+}
+
+html.light .text-white\/60 {
+  color: rgb(24 24 27 / 0.6) !important;
+}
+
+html.light .text-white\/65 {
+  color: rgb(24 24 27 / 0.65) !important;
+}
+
+html.light .text-white\/70 {
+  color: rgb(24 24 27 / 0.7) !important;
+}
+
+html.light .text-white\/80 {
+  color: rgb(24 24 27 / 0.8) !important;
+}
+
+html.light .bg-white\/5 {
+  background-color: rgb(0 0 0 / 0.04) !important;
+}
+
+html.light .bg-white\/10 {
+  background-color: rgb(0 0 0 / 0.06) !important;
+}
+
+html.light .bg-white\/15 {
+  background-color: rgb(0 0 0 / 0.08) !important;
+}
+
+html.light .bg-white\/20 {
+  background-color: rgb(0 0 0 / 0.1) !important;
+}
+
+html.light .hover\:bg-white\/5:hover {
+  background-color: rgb(0 0 0 / 0.04) !important;
+}
+
+html.light .hover\:bg-white\/10:hover {
+  background-color: rgb(0 0 0 / 0.06) !important;
+}
+
+html.light .hover\:bg-white\/15:hover {
+  background-color: rgb(0 0 0 / 0.08) !important;
+}
+
+html.light .active\:bg-white\/10:active {
+  background-color: rgb(0 0 0 / 0.06) !important;
+}
+
+html.light .active\:bg-white\/15:active {
+  background-color: rgb(0 0 0 / 0.08) !important;
+}
+
+html.light .border-white\/5 {
+  border-color: var(--app-border) !important;
+}
+
+html.light .border-white\/10 {
+  border-color: rgb(0 0 0 / 0.1) !important;
+}
+
+html.light .bg-black\/55 {
+  background-color: rgb(255 255 255 / 0.75) !important;
+}
+
+html.light .bg-black\/60 {
+  background-color: rgb(0 0 0 / 0.35) !important;
+}
+
+html.light .bg-black\/20 {
+  background-color: rgb(0 0 0 / 0.06) !important;
+}
+
+html.light .bg-black\/30 {
+  background-color: rgb(0 0 0 / 0.12) !important;
+}
+
+html.light .shadow-black\/50 {
+  --tw-shadow-color: rgb(0 0 0 / 0.12) !important;
+}
+
+html.light .placeholder\:text-white\/40::placeholder {
+  color: var(--app-fg-subtle) !important;
+}
+
+html.light .bg-surface-highlight\/30 {
+  background-color: rgb(0 0 0 / 0.04) !important;
+}
+
+html.light .bg-surface-highlight\/40 {
+  background-color: rgb(0 0 0 / 0.05) !important;
+}
+
+html.light .bg-surface-highlight\/50 {
+  background-color: rgb(0 0 0 / 0.06) !important;
+}
+
+html.light .bg-surface-highlight\/60 {
+  background-color: rgb(0 0 0 / 0.07) !important;
+}
+
+html.light .bg-surface\/95 {
+  background-color: rgb(255 255 255 / 0.95) !important;
+}
+
+html.light .hover\:text-white:hover {
+  color: var(--app-fg) !important;
+}
+
+/* 手机壳外层边框 */
+html.light .border-white\/5 {
+  border-color: var(--app-border) !important;
+}
