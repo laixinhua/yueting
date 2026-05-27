@@ -1,6 +1,7 @@
 import { getAudioUrl } from '../api/ebnr'
 import type { EbnrTrack } from '../types/ebnr'
 import type { Song, SongGenre } from '../types'
+import { normalizeImageUrl } from './imageUrl'
 import {
   readPlayableProbeCache,
   writePlayableProbeCache,
@@ -116,7 +117,7 @@ export function ebnrTrackToSong(track: EbnrTrack): Song {
     url: '',
     source: 'netease',
     neteaseId: track.id,
-    coverUrl: track.album?.cover_url ?? undefined,
+    coverUrl: normalizeImageUrl(track.album?.cover_url),
   }
 }
 

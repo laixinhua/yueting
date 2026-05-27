@@ -1,5 +1,6 @@
 import type { EbnrAlbum, EbnrAlbumDetail } from '../types/ebnr'
 import type { Playlist } from '../types'
+import { normalizeImageUrl } from './imageUrl'
 import { neteaseAlbumId } from '../data/neteaseAlbums'
 import { ebnrTrackToSong } from './neteaseSong'
 import { NEUTRAL_PLAY_ACCENT } from './songTheme'
@@ -17,7 +18,7 @@ export function buildNeteaseAlbumCard(meta: EbnrAlbum, gradient: string): Playli
     gradient,
     playAccent: NEUTRAL_PLAY_ACCENT,
     songs: [],
-    coverUrl: meta.cover_url ?? undefined,
+    coverUrl: normalizeImageUrl(meta.cover_url),
   }
 }
 

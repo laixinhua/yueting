@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { gradientStyle } from '../utils/gradientStyle'
+import { CoverImage } from './CoverImage'
 import { IconMusic } from './icons'
 
 interface AlbumCoverProps {
@@ -34,16 +36,27 @@ export function AlbumCover({
   rounded = 'md',
   hidePlaceholderIcon = false,
 }: AlbumCoverProps) {
+  const [imgFailed, setImgFailed] = useState(false)
+  useEffect(() => {
+    setImgFailed(false)
+  }, [imageUrl])
+
+  const showImage = Boolean(imageUrl) && !imgFailed
+
   return (
     <div
       className={`relative overflow-hidden shrink-0 ${sizeMap[size]} ${roundedMap[rounded]} ${className} shadow-lg shadow-black/30`}
       style={gradientStyle(gradient)}
     >
-      {imageUrl ? (
-        <img src={imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+      {showImage ? (
+        <CoverImage
+          src={imageUrl}
+          className="absolute inset-0 w-full h-full object-cover"
+          onError={() => setImgFailed(true)}
+        />
       ) : null}
-      {imageUrl ? <div className="absolute inset-0 bg-black/10" /> : null}
-      {!imageUrl && !hidePlaceholderIcon ? (
+      {showImage ? <div className="absolute inset-0 bg-black/10" /> : null}
+      {!showImage && !hidePlaceholderIcon ? (
         <IconMusic className="absolute bottom-1 right-1 w-1/3 h-1/3 text-white/30" />
       ) : null}
     </div>

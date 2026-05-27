@@ -147,10 +147,28 @@ npm run preview
 - **JDK 17**（`JAVA_HOME` 指向 jdk-17）
 - **Android SDK**（需已安装 **Android SDK Platform 36**，且 `platforms/android-36/android.jar` 存在）
 
-### 一键打包
+### 一键打包并发布（推荐）
+
+先登录 GitHub CLI（只需一次）：
+
+```bash
+gh auth login
+```
+
+打包 APK 并同步到 GitHub Releases（版本号取自 `package.json`）：
 
 ```bash
 npm install
+npm run android:release
+```
+
+成功后终端会输出 **Release 页面** 和 **APK 直链**，手机浏览器打开直链即可下载安装。
+
+> 发新版前请先把 `package.json` 里的 `version` 改成新版本（如 `0.5.2`），再执行 `npm run android:release`。
+
+### 仅本地打包（不上传 GitHub）
+
+```bash
 npm run android:apk
 ```
 
@@ -161,36 +179,51 @@ npm run android:apk
 
 ### 安装到手机
 
-1. 将 `release/yueting-debug.apk` 传到手机
+1. 将 `release/yueting-debug.apk` 传到手机，或从 GitHub Releases 直链下载
 2. 允许「安装未知来源应用」
 3. 安装并打开「悦听」
 
 > 当前为 **debug 未签名包**，仅供自测。上架需配置签名后构建 Release。
 
-修改代码后重新打包：`npm run android:apk`  
+修改代码后重新打包发布：`npm run android:release`  
+仅本地调试包：`npm run android:apk`  
 用 Android Studio 打开工程：`npm run android:open`
 
-### 发布到 GitHub Releases（手机直链下载）
+### 仅上传已有 APK 到 GitHub
 
-1. 安装并登录 GitHub CLI（只需一次）：
-
-```bash
-gh auth login
-```
-
-2. 打包并创建 Release（自动上传 APK）：
+若已执行过 `android:apk`，可单独上传：
 
 ```bash
 npm run release:github
 ```
 
-成功后终端会输出 **Release 页面** 和 **APK 直链**，手机浏览器打开直链即可下载安装。
-
-默认仓库名 `yueting`（`https://github.com/你的用户名/yueting`）。若需指定名称：
+默认仓库 `laixinhua/yueting`。若需指定：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/publish-github-release.ps1 -Repo 你的仓库名
+powershell -ExecutionPolicy Bypass -File scripts/publish-github-release.ps1 -Repo 你的用户名/仓库名
 ```
+
+### 国内下载慢怎么办？
+
+GitHub 服务器在海外，**5MB 的 APK 在手机上直连 GitHub 经常只有几十 KB/s**，属于正常现象，不是包有问题。
+
+**推荐做法（按速度从快到慢）：**
+
+| 方式 | 说明 |
+|------|------|
+| **电脑下载 + 传手机** | 电脑用浏览器或 IDM 下 `release/yueting-debug.apk`，再用微信/数据线传到手机（最稳） |
+| **代理加速链接** | 在官方直链前加镜像前缀（第三方服务，可用性不保证） |
+| **同一 WiFi 预览** | 开发阶段用 `npm run dev`，手机访问电脑局域网地址，不必每次下 APK |
+
+当前版本 **v0.5.1** 链接：
+
+| 类型 | 地址 |
+|------|------|
+| 官方直链 | https://github.com/laixinhua/yueting/releases/download/v0.5.1/yueting-debug.apk |
+| 加速镜像（可试） | https://ghproxy.net/https://github.com/laixinhua/yueting/releases/download/v0.5.1/yueting-debug.apk |
+| Release 页 | https://github.com/laixinhua/yueting/releases/tag/v0.5.1 |
+
+若镜像也慢，优先用 **电脑下载后微信发文件** 到手机安装。
 
 ---
 
@@ -203,7 +236,9 @@ powershell -ExecutionPolicy Bypass -File scripts/publish-github-release.ps1 -Rep
 | `npm run preview` | 预览生产构建（含代理） |
 | `npm run build:app` | 为 Capacitor 构建 Web 资源（`--mode capacitor`） |
 | `npm run cap:sync` | 构建并同步到 Android 工程 |
-| `npm run android:apk` | 同步 + 编译 debug APK + 复制到 `release/` |
+| `npm run android:apk` | 同步 + 编译 debug APK + 复制到 `release/`（不上传） |
+| `npm run android:release` | 打包 APK + 推送代码 + 发布 GitHub Release |
+| `npm run release:github` | 仅上传 `release/yueting-debug.apk` 到 GitHub |
 | `npm run android:open` | 用 Android Studio 打开 |
 | `npm run lint` | ESLint 检查 |
 

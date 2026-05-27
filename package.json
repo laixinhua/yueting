@@ -1,7 +1,7 @@
 {
   "name": "test",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.5.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,6 +10,7 @@
     "cap:sync": "npm run build:app && npx cap sync android",
     "android:apk": "npm run cap:sync && cd android && .\\gradlew.bat assembleDebug && cd .. && node -e \"require('fs').mkdirSync('release',{recursive:true});require('fs').copyFileSync('android/app/build/outputs/apk/debug/app-debug.apk','release/yueting-debug.apk')\"",
     "android:open": "npx cap open android",
+    "android:release": "npm run android:apk && npm run release:github",
     "release:github": "powershell -ExecutionPolicy Bypass -File scripts/publish-github-release.ps1",
     "lint": "eslint .",
     "preview": "vite preview"

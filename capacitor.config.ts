@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: '悦听',
   webDir: 'dist',
   android: {
-    allowMixedContent: false,
+    allowMixedContent: true,
   },
   server: {
     androidScheme: 'https',

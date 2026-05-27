@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+import { CoverImage } from './CoverImage'
 import type { Playlist } from '../types'
 import { gradientStyle } from '../utils/gradientStyle'
 import { getPlaylistPlayButtonStyle } from '../utils/songTheme'
@@ -26,6 +28,13 @@ function HoverPlayButton({ size = 'lg' }: { size?: 'lg' | 'sm' }) {
 }
 
 export function PlaylistCard({ playlist, onClick, variant = 'square', scrollable = false }: PlaylistCardProps) {
+  const [imgFailed, setImgFailed] = useState(false)
+  useEffect(() => {
+    setImgFailed(false)
+  }, [playlist.coverUrl, playlist.id])
+
+  const showCover = Boolean(playlist.coverUrl) && !imgFailed
+
   if (variant === 'wide') {
     return (
       <button
@@ -37,10 +46,14 @@ export function PlaylistCard({ playlist, onClick, variant = 'square', scrollable
           className="relative w-14 h-14 rounded-md shrink-0 shadow-md overflow-hidden"
           style={gradientStyle(playlist.gradient)}
         >
-          {playlist.coverUrl ? (
-            <img src={playlist.coverUrl} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+          {showCover ? (
+            <CoverImage
+              src={playlist.coverUrl}
+              className="absolute inset-0 w-full h-full object-cover"
+              onError={() => setImgFailed(true)}
+            />
           ) : null}
-          {playlist.coverUrl ? (
+          {showCover ? (
             <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/25 transition-colors">
               <HoverPlayButton size="sm" />
             </div>
@@ -62,10 +75,14 @@ export function PlaylistCard({ playlist, onClick, variant = 'square', scrollable
         className="relative w-full h-36 rounded-lg shadow-lg shadow-black/40 mb-3 overflow-hidden"
         style={gradientStyle(playlist.gradient)}
       >
-        {playlist.coverUrl ? (
-          <img src={playlist.coverUrl} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+        {showCover ? (
+          <CoverImage
+            src={playlist.coverUrl}
+            className="absolute inset-0 w-full h-full object-cover"
+            onError={() => setImgFailed(true)}
+          />
         ) : null}
-        {playlist.coverUrl ? (
+        {showCover ? (
           <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
             <HoverPlayButton size="lg" />
           </div>

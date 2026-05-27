@@ -1,75 +1,125 @@
 #Requires -Version 5.1
 param(
-  [string]$Version = "v0.5.0",
-  [string]$Repo = ""
+  [string]$Version = "",
+  [string]$Repo = "laixinhua/yueting",
+  [switch]$SkipBuild,
+  [switch]$SkipPush
 )
 
 $ErrorActionPreference = "Stop"
 Set-Location (Join-Path $PSScriptRoot "..")
 
+function Invoke-Git {
+  param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Args)
+  $old = $ErrorActionPreference
+  $ErrorActionPreference = "SilentlyContinue"
+  & git @Args
+  $code = $LASTEXITCODE
+  $ErrorActionPreference = $old
+  return $code
+}
+
+function Get-AppVersionTag {
+  $pkg = Get-Content "package.json" -Raw | ConvertFrom-Json
+  $raw = [string]$pkg.version
+  if (-not $raw) { throw "package.json version is empty" }
+  if ($raw.StartsWith("v")) { return $raw }
+  return "v$raw"
+}
+
 function Get-GitOriginUrl {
+  Invoke-Git remote get-url origin | Out-Null
+  if ($LASTEXITCODE -ne 0) { return $null }
   $old = $ErrorActionPreference
   $ErrorActionPreference = "SilentlyContinue"
   $url = git remote get-url origin 2>$null
   $ErrorActionPreference = $old
-  if ($LASTEXITCODE -ne 0) { return $null }
   return $url
 }
 
 function Ensure-GhAuth {
+  $old = $ErrorActionPreference
+  $ErrorActionPreference = "SilentlyContinue"
   gh auth status 2>$null | Out-Null
+  $ErrorActionPreference = $old
   if ($LASTEXITCODE -ne 0) {
-    Write-Host "Please login first: gh auth login" -ForegroundColor Yellow
-    Write-Host "Then run: npm run release:github" -ForegroundColor Yellow
+    Write-Host "请先登录 GitHub CLI: gh auth login" -ForegroundColor Yellow
+    Write-Host "登录后运行: npm run android:release" -ForegroundColor Yellow
     exit 1
   }
+}
+
+if (-not $Version) {
+  $Version = Get-AppVersionTag
 }
 
 Ensure-GhAuth
 
 $apkAsset = "release/yueting-debug.apk"
-if (-not (Test-Path $apkAsset)) {
+if (-not $SkipBuild -and -not (Test-Path $apkAsset)) {
   Write-Host "Building APK..."
   npm run android:apk
 }
 
 if (-not (Test-Path $apkAsset)) {
   Write-Host "APK not found: $apkAsset" -ForegroundColor Red
+  Write-Host "Run: npm run android:apk" -ForegroundColor Yellow
   exit 1
 }
 
 if (-not (Test-Path ".git")) {
-  git init -b main | Out-Null
+  Invoke-Git init -b main | Out-Null
 }
 
-$remote = Get-GitOriginUrl
-if (-not $remote) {
-  $repoName = if ($Repo) { $Repo } else { "yueting" }
-  Write-Host "Creating GitHub repo and pushing..."
-  gh repo create $repoName --public --source=. --remote=origin --push --description "Yueting music player"
-  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-} else {
-  git add -A
-  git diff --cached --quiet
-  if ($LASTEXITCODE -ne 0) {
-    git commit -m "chore: sync before release $Version"
+if (-not $SkipPush) {
+  $remote = Get-GitOriginUrl
+  if (-not $remote) {
+    $repoName = if ($Repo -match "/") { ($Repo -split "/")[-1] } else { $Repo }
+    Write-Host "Creating GitHub repo and pushing..."
+    gh repo create $repoName --public --source=. --remote=origin --push --description "Yueting music player"
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  } else {
+    Invoke-Git add -A | Out-Null
+    Invoke-Git diff --cached --quiet | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+      Invoke-Git commit -m "chore: release $Version" | Out-Null
+    }
+    Invoke-Git push -u origin HEAD | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+      Invoke-Git push -u origin main | Out-Null
+    }
+    if ($LASTEXITCODE -ne 0) {
+      Write-Host "git push failed" -ForegroundColor Red
+      exit $LASTEXITCODE
+    }
   }
-  git push -u origin HEAD 2>$null
-  if ($LASTEXITCODE -ne 0) { git push -u origin main }
 }
 
-$notes = "Yueting Android debug APK. Download yueting-debug.apk on your phone. Version: $Version."
+$notes = @"
+## 悦听 $Version
 
-gh release view $Version 2>$null | Out-Null
-if ($LASTEXITCODE -eq 0) {
-  gh release upload $Version $apkAsset --clobber
+下载 \`yueting-debug.apk\` 安装到 Android 手机（debug 包，仅供自测）。
+
+### 更新说明
+- 修复 APK 内封面图无法加载（混合内容 / http 链接）
+- 封面加载失败时显示渐变占位，不再出现破图图标
+"@
+
+$old = $ErrorActionPreference
+$ErrorActionPreference = "SilentlyContinue"
+gh release view $Version --repo $Repo 2>$null | Out-Null
+$releaseExists = ($LASTEXITCODE -eq 0)
+$ErrorActionPreference = $old
+
+if ($releaseExists) {
+  gh release upload $Version $apkAsset --repo $Repo --clobber
 } else {
-  gh release create $Version $apkAsset --title "Yueting $Version" --notes $notes
+  gh release create $Version $apkAsset --repo $Repo --title "悦听 $Version" --notes $notes
 }
 
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-$json = gh release view $Version --json url,assets | ConvertFrom-Json
+$json = gh release view $Version --repo $Repo --json url,assets | ConvertFrom-Json
 Write-Host ""
 Write-Host "Release URL:" -ForegroundColor Green
 Write-Host $json.url
@@ -78,5 +128,8 @@ Write-Host "APK download (open on phone):" -ForegroundColor Green
 foreach ($asset in $json.assets) {
   if ($asset.name -like "*.apk") {
     Write-Host $asset.browser_download_url
+    Write-Host ""
+    Write-Host "Mirror (if GitHub is slow in CN):" -ForegroundColor Yellow
+    Write-Host ("https://ghproxy.net/{0}" -f $asset.browser_download_url)
   }
 }
