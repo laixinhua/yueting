@@ -10,10 +10,10 @@ $ErrorActionPreference = "Stop"
 Set-Location (Join-Path $PSScriptRoot "..")
 
 function Invoke-Git {
-  param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Args)
+  param([Parameter(ValueFromRemainingArguments = $true)][string[]]$GitArgs)
   $old = $ErrorActionPreference
   $ErrorActionPreference = "SilentlyContinue"
-  & git @Args
+  & git @GitArgs
   $code = $LASTEXITCODE
   $ErrorActionPreference = $old
   return $code
@@ -79,7 +79,7 @@ if (-not $SkipPush) {
     gh repo create $repoName --public --source=. --remote=origin --push --description "Yueting music player"
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   } else {
-    Invoke-Git add -A | Out-Null
+    Invoke-Git add --all | Out-Null
     Invoke-Git diff --cached --quiet | Out-Null
     if ($LASTEXITCODE -ne 0) {
       Invoke-Git commit -m "chore: release $Version" | Out-Null
