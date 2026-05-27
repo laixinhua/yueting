@@ -4,7 +4,6 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- 悦听：紫色音符图标 -->
     <path
         android:fillColor="#A855F7"
         android:pathData="M44,62m-16,0a16,16 0,1 1,32 0a16,16 0,1 1,-32 0" />
