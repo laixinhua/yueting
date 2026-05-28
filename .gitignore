@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 release/*.apk
+releases/
 android/local.properties
 android/.gradle
 android/app/build

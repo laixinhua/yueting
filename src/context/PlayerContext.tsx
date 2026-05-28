@@ -108,7 +108,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const restoredRef = useRef(false)
   const playSessionRef = useRef(0)
   const currentSongRef = useRef(currentSong)
+  const loadedSongIdRef = useRef<string | null>(null)
+  const queueRef = useRef(queue)
+  const queueIndexRef = useRef(queueIndex)
+  const autoPlayNextRef = useRef(autoPlayNext)
+  const playModeRef = useRef(playMode)
   currentSongRef.current = currentSong
+  queueRef.current = queue
+  queueIndexRef.current = queueIndex
+  autoPlayNextRef.current = autoPlayNext
+  playModeRef.current = playMode
 
   const audio = useAudioPlayer()
   const { recordPlay } = useRecentPlaysContext()
@@ -155,6 +164,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         const url = await resolveNeteasePlayUrl(ncmId, { forceRefresh: true })
         if (session !== playSessionRef.current) return false
         await audio.load(url, true, false)
+        loadedSongIdRef.current = song.id
         return true
       } catch {
         return false
@@ -170,7 +180,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const song = resolved[idx]
       if (!song) return
 
-      audio.pause()
+      audio.prepareTrackChange()
+      loadedSongIdRef.current = null
       const target = resolveSong(song)
       setCurrentSong(target)
       if (isNeteaseSong(target)) upsertNeteaseSong(target)
@@ -184,6 +195,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
       try {
         await tryLoad(false)
+        if (session === playSessionRef.current) loadedSongIdRef.current = target.id
       } catch (err) {
         if (session !== playSessionRef.current) return
         if (isNeteaseSong(target)) {
@@ -191,6 +203,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           if (ncmId != null) invalidateNeteaseAudioCache(ncmId)
           try {
             await tryLoad(true)
+            if (session === playSessionRef.current) loadedSongIdRef.current = target.id
             return
           } catch (retryErr) {
             if (session !== playSessionRef.current) return
@@ -260,36 +273,42 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   )
 
   const playNext = useCallback(() => {
-    if (queue.length === 0) return
-    if (playMode === 'shuffle') {
-      void playAtIndex(pickShuffleIndex(queue.length, queueIndex), queue)
+    const q = queueRef.current
+    const qi = queueIndexRef.current
+    const mode = playModeRef.current
+    if (q.length === 0) return
+    if (mode === 'shuffle') {
+      void playAtIndex(pickShuffleIndex(q.length, qi), q)
       return
     }
-    const atEnd = queueIndex + 1 >= queue.length
+    const atEnd = qi + 1 >= q.length
     if (atEnd) {
-      if (playMode === 'loop') void playAtIndex(0, queue)
+      if (mode === 'loop') void playAtIndex(0, q)
       return
     }
-    void playAtIndex(queueIndex + 1, queue)
-  }, [queue, queueIndex, playMode, playAtIndex])
+    void playAtIndex(qi + 1, q)
+  }, [playAtIndex])
 
   const playPrevious = useCallback(() => {
-    if (queue.length === 0) return
+    const q = queueRef.current
+    const qi = queueIndexRef.current
+    const mode = playModeRef.current
+    if (q.length === 0) return
     if (audio.currentTime > 3) {
       audio.seek(0)
       return
     }
-    if (playMode === 'shuffle') {
-      void playAtIndex(pickShuffleIndex(queue.length, queueIndex), queue)
+    if (mode === 'shuffle') {
+      void playAtIndex(pickShuffleIndex(q.length, qi), q)
       return
     }
-    const atStart = queueIndex <= 0
+    const atStart = qi <= 0
     if (atStart) {
-      if (playMode === 'loop') void playAtIndex(queue.length - 1, queue)
+      if (mode === 'loop') void playAtIndex(q.length - 1, q)
       return
     }
-    void playAtIndex(queueIndex - 1, queue)
-  }, [queue, queueIndex, playMode, playAtIndex, audio])
+    void playAtIndex(qi - 1, q)
+  }, [playAtIndex, audio])
 
   const togglePlay = useCallback(() => {
     if (isEmptyPlaceholder(currentSong)) return
@@ -297,14 +316,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       audio.pause()
       return
     }
-    if (audio.getSrc()) {
+    const target = resolveSong(currentSong)
+    if (loadedSongIdRef.current === target.id && audio.getSrc()) {
       void audio.play()
       return
     }
-    const target = resolveSong(currentSong)
+    if (queue.length > 0) {
+      void playAtIndex(queueIndex, queue)
+      return
+    }
     const loadFresh = async (forceRefresh: boolean) => {
+      audio.prepareTrackChange()
+      loadedSongIdRef.current = null
       const url = await resolveSongPlayUrl(target, { forceRefresh })
       await audio.load(url, true)
+      loadedSongIdRef.current = target.id
     }
     void loadFresh(false).catch(async (err) => {
       if (!isNeteaseSong(target)) {
@@ -319,7 +345,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         audio.reportError(formatPlayError(retryErr))
       }
     })
-  }, [audio, currentSong, resolveSong])
+  }, [audio, currentSong, resolveSong, queue, queueIndex, playAtIndex])
 
   const dismissError = useCallback(() => {
     audio.reportError(null)
@@ -409,8 +435,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setQueue([])
     setQueueIndex(0)
     setCurrentSong(EMPTY_CURRENT_SONG)
+    loadedSongIdRef.current = null
     saveStoredQueue([], 0)
-    audio.pause()
+    audio.stop()
   }, [audio])
 
   const cancelSleepTimer = useCallback(() => {
@@ -471,22 +498,26 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         audio.pause()
         return
       }
-      if (!autoPlayNext || queue.length === 0) return
-      if (playMode === 'one') {
+      if (!autoPlayNextRef.current) return
+      const q = queueRef.current
+      const qi = queueIndexRef.current
+      const mode = playModeRef.current
+      if (q.length === 0) return
+      if (mode === 'one') {
         audio.seek(0)
         void audio.play()
         return
       }
-      if (playMode === 'loop' || playMode === 'shuffle') {
+      if (mode === 'loop' || mode === 'shuffle') {
         playNext()
         return
       }
-      if (playMode === 'list') {
-        if (queueIndex + 1 < queue.length) playNext()
+      if (mode === 'list' && qi + 1 < q.length) {
+        playNext()
       }
     })
     return () => audio.setOnEnded(null)
-  }, [audio, playNext, playMode, queueIndex, queue.length, autoPlayNext, cancelSleepTimer])
+  }, [audio, playNext, cancelSleepTimer])
 
   const sleepTimerActive = sleepTimerKind !== 'off'
   const sleepTimerRemainingLabel =
