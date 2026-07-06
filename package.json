@@ -1,0 +1,42 @@
+{
+  "name": "test",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "build:app": "tsc -b && vite build --mode capacitor",
+    "cap:sync": "npm run build:app && npx cap sync android",
+    "android:apk": "npm run cap:sync && cd android && .\\gradlew.bat assembleDebug && cd .. && node -e \"require('fs').mkdirSync('release',{recursive:true});require('fs').copyFileSync('android/app/build/outputs/apk/debug/app-debug.apk','release/yueting-debug.apk')\"",
+    "android:open": "npx cap open android",
+    "android:release": "npm run android:apk && npm run release:github",
+    "release:github": "powershell -ExecutionPolicy Bypass -File scripts/publish-github-release.ps1",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/app": "^6.0.3",
+    "@capacitor/core": "^6.2.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.1",
+    "@eslint/js": "^10.0.1",
+    "@tailwindcss/vite": "^4.3.0",
+    "@types/node": "^24.12.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^10.3.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
+    "tailwindcss": "^4.3.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.59.2",
+    "vite": "^8.0.12"
+  }
+}
