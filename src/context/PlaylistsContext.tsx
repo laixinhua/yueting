@@ -9,7 +9,7 @@ interface PlaylistsContextValue {
   allPlaylists: Playlist[]
   userPlaylists: Playlist[]
   mockPlaylists: Playlist[]
-  createPlaylist: (title: string, songIds?: string[]) => Playlist
+  createPlaylist: (title: string, songs?: Song[]) => Playlist
   updatePlaylist: (id: string, patch: { title?: string; description?: string; songIds?: string[] }) => void
   deletePlaylist: (id: string) => void
   resolvePlaylist: (songIds: string[]) => import('../types').Song[]
@@ -19,49 +19,67 @@ interface PlaylistsContextValue {
 
 const PlaylistsContext = createContext<PlaylistsContextValue | null>(null)
 
-function resolveSongs(songIds: string[], getSongById: (id: string) => import('../types').Song | undefined) {
-  return songIds.map((id) => getSongById(id)).filter((s): s is NonNullable<typeof s> => Boolean(s))
-}
-
 export function PlaylistsProvider({ children }: { children: ReactNode }) {
   const { getSongById, upsertNeteaseSong } = useSongCatalog()
-  const { stored, createPlaylist: createStored, updatePlaylist: updateStored, deletePlaylist } = useUserPlaylists()
+  const {
+    stored,
+    createPlaylist: createStored,
+    addSongToStored,
+    updatePlaylist: updateStored,
+    deletePlaylist,
+  } = useUserPlaylists()
 
   const resolvePlaylist = useCallback(
-    (songIds: string[]) => resolveSongs(songIds, getSongById),
-    [getSongById],
+    (songIds: string[]) => {
+      // 优先用各歌单自带的歌曲实体，缺失再回退到目录（兼容老数据）
+      const selfSongs = new Map<string, Song>()
+      for (const p of stored) for (const s of p.songs) selfSongs.set(s.id, s)
+      return songIds
+        .map((id) => selfSongs.get(id) ?? getSongById(id))
+        .filter((s): s is Song => Boolean(s))
+    },
+    [stored, getSongById],
   )
 
   const userPlaylists = useMemo<Playlist[]>(
     () =>
-      stored.map((p) => ({
-        id: p.id,
-        title: p.title,
-        description: p.description,
-        gradient: p.gradient,
-        playAccent: p.playAccent,
-        songs: resolveSongs(p.songIds, getSongById),
-        userCreated: true,
-      })),
+      stored.map((p) => {
+        const ownSongs = p.songs ?? []
+        const ownIds = new Set(ownSongs.map((s) => s.id))
+        // 兼容只有 songIds、没有自带 songs 的老歌单：回退到目录解析
+        const extra = (p.songIds ?? []).filter((id) => !ownIds.has(id))
+        const resolvedExtra = extra
+          .map((id) => getSongById(id))
+          .filter((s): s is Song => Boolean(s))
+        return {
+          id: p.id,
+          title: p.title,
+          description: p.description,
+          gradient: p.gradient,
+          playAccent: p.playAccent,
+          songs: [...ownSongs, ...resolvedExtra],
+          userCreated: true,
+        }
+      }),
     [stored, getSongById],
   )
 
   const allPlaylists = useMemo(() => [...mockPlaylists, ...userPlaylists], [userPlaylists])
 
   const createPlaylist = useCallback(
-    (title: string, songIds: string[] = []) => {
-      const stored = createStored(title, songIds)
+    (title: string, songs: Song[] = []) => {
+      const stored = createStored(title, songs)
       return {
         id: stored.id,
         title: stored.title,
         description: stored.description,
         gradient: stored.gradient,
         playAccent: stored.playAccent,
-        songs: resolveSongs(stored.songIds, getSongById),
+        songs: stored.songs,
         userCreated: true,
       }
     },
-    [createStored, getSongById],
+    [createStored],
   )
 
   const updatePlaylist = useCallback(
@@ -82,10 +100,11 @@ export function PlaylistsProvider({ children }: { children: ReactNode }) {
       const playlist = stored.find((p) => p.id === playlistId)
       if (!playlist || playlist.songIds.includes(song.id)) return false
       if (isNeteaseSong(song)) upsertNeteaseSong(song)
-      updateStored(playlistId, { songIds: [...playlist.songIds, song.id] })
+      // 把完整歌曲实体写进歌单，使其自包含、不再依赖外部歌曲 store
+      addSongToStored(playlistId, song)
       return true
     },
-    [stored, updateStored, upsertNeteaseSong],
+    [stored, addSongToStored, upsertNeteaseSong],
   )
 
   const value = useMemo(

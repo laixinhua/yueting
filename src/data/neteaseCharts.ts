@@ -35,19 +35,35 @@ export const NETEASE_DAILY_PLAYLIST_CANDIDATES = [
     gradient: 'from-fuchsia-500 to-purple-700',
   },
   {
-    id: 2884035,
-    label: '原创榜精选',
-    gradient: 'from-cyan-500 to-blue-600',
-  },
-  {
     id: 60198,
     label: '华语经典',
     gradient: 'from-amber-500 to-orange-600',
   },
+  // —— 以下为扩充的候选（均已验证可正常返回曲目）——
   {
-    id: 2207794311,
-    label: '私人雷达',
-    gradient: 'from-violet-600 to-indigo-800',
+    id: 10520166,
+    label: '国电榜',
+    gradient: 'from-sky-400 via-blue-500 to-indigo-600',
+  },
+  {
+    id: 71384707,
+    label: '古典榜',
+    gradient: 'from-amber-400 via-orange-500 to-rose-600',
+  },
+  {
+    id: 909624788,
+    label: 'Whatever',
+    gradient: 'from-slate-500 via-gray-600 to-zinc-800',
+  },
+  {
+    id: 565026047,
+    label: 'Anson Hu',
+    gradient: 'from-rose-400 via-pink-500 to-purple-700',
+  },
+  {
+    id: 384879523,
+    label: 'Fallen Angels',
+    gradient: 'from-indigo-500 via-violet-600 to-fuchsia-800',
   },
 ].filter((item) => !CHART_ID_SET.has(item.id))
 

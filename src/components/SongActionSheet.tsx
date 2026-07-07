@@ -83,7 +83,7 @@ export function SongActionSheet({ song, onClose }: SongActionSheetProps) {
 
   const handleCreateAndAdd = () => {
     const title = newPlaylistTitle.trim() || '新建歌单'
-    createPlaylist(title, [song.id])
+    createPlaylist(title, [song])
     onClose()
   }
 

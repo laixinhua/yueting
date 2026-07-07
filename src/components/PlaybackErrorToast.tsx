@@ -6,7 +6,8 @@ export function PlaybackErrorToast() {
 
   useEffect(() => {
     if (!error) return
-    const timer = window.setTimeout(() => dismissError(), 6000)
+    // 延长停留时间，确保用户看清错误内容（原 6s 过短）
+    const timer = window.setTimeout(() => dismissError(), 12000)
     return () => window.clearTimeout(timer)
   }, [error, dismissError])
 

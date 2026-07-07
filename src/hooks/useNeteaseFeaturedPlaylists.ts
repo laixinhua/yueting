@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { EbnrApiError } from '../api/ebnr'
 import {
   FEATURED_DAILY_PLAYLIST_COUNT,
@@ -78,5 +78,17 @@ export function useNeteaseFeaturedPlaylists() {
     }
   }, [])
 
-  return { playlists, loading, error }
+  const refresh = useCallback(async () => {
+    try {
+      const list = await fetchFeaturedPlaylistsFresh()
+      if (list.length > 0) {
+        setPlaylists(list)
+        for (const p of list) prefetchCover(p.coverUrl)
+      }
+    } catch {
+      /* 换一换失败：保留当前列表 */
+    }
+  }, [])
+
+  return { playlists, loading, error, refresh }
 }

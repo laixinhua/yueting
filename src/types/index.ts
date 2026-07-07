@@ -1,6 +1,6 @@
 export type SongGenre = 'pop' | 'rock' | 'hiphop' | 'electronic' | 'jazz' | 'classical' | 'indie' | 'sleep'
 
-export type SongSource = 'mock' | 'local' | 'netease'
+export type SongSource = 'mock' | 'local' | 'netease' | 'qq' | 'kugou' | 'yaohud'
 
 export interface Song {
   id: string

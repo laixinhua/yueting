@@ -117,22 +117,9 @@ function isRetryableError(err: unknown): boolean {
 async function requestOnce<T>(base: string, path: string, init?: RequestInit): Promise<T> {
   const url = `${base}${path}`
 
+  // native（手机）上只走 CapacitorHttp：它用原生网络栈，自带绕开 WebView 的 CORS 限制。
+  // Web fetch 在 native 会被 CORS 拦截并产生无意义的英文报错，故完全不走，也不重试。
   if (Capacitor.isNativePlatform()) {
-    let lastErr: unknown = null
-
-    try {
-      const res = await fetchViaWeb(url, init)
-      if (!res.ok) {
-        throw new EbnrApiError(`音乐服务错误（${res.status}）`, res.status)
-      }
-      return res.json() as Promise<T>
-    } catch (err) {
-      lastErr = err
-      if (err instanceof EbnrApiError && err.status != null && err.status < 500) {
-        throw err
-      }
-    }
-
     try {
       const res = await fetchViaCapacitorHttp(url, init)
       if (res.status >= 400) {
@@ -140,8 +127,10 @@ async function requestOnce<T>(base: string, path: string, init?: RequestInit): P
       }
       return parseResponseBody(res.data) as T
     } catch (err) {
-      if (err instanceof EbnrApiError) throw err
-      if (lastErr instanceof EbnrApiError) throw lastErr
+      // 4xx（404/403 等确定失败）不再重试；429（限流）与 5xx 交由外层重试
+      if (err instanceof EbnrApiError && err.status != null && err.status < 500 && err.status !== 429) {
+        throw err
+      }
       throw err
     }
   }

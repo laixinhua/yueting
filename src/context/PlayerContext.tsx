@@ -184,6 +184,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const playAtIndex = useCallback(
     async (index: number, list: Song[]) => {
       const session = ++playSessionRef.current
+      audio.beginSession()
       const { list: resolved, index: idx } = applyQueue(list, index)
       const song = resolved[idx]
       if (!song) return
@@ -226,7 +227,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             return
           } catch (retryErr) {
             if (session !== playSessionRef.current) return
-            audio.reportError(formatPlayError(retryErr))
+            audio.reportError(
+              isNeteaseSong(target)
+                ? '当前网络无法连接网易云音频服务器（music.126.net 被屏蔽），请切换网络或使用代理后重试'
+                : formatPlayError(retryErr),
+            )
             return
           }
         }
@@ -346,6 +351,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
     const loadFresh = async (forceRefresh: boolean) => {
       loadedSongIdRef.current = null
+      audio.beginSession()
       const url = await resolveSongPlayUrl(target, { forceRefresh })
       await warmNeteaseAudioUrl(url, { force: forceRefresh })
       const ok = await audio.load(url, true)

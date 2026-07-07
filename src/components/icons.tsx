@@ -81,10 +81,15 @@ export function IconShuffle({ className }: IconProps) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M5 16 C9 16, 10 9, 14 9 C17 9, 18 6, 20 5" />
-      <path d="M17 3l4 4-4 4" />
-      <path d="M5 8 C9 8, 10 15, 14 15 C17 15, 18 18, 20 19" />
-      <path d="M17 21l4-4-4-4" />
+      {/* 连续曲线：穿过交汇点(12,12)，不打断 */}
+      <path d="M4 18 C 9 18, 10 13, 12 12 C 14 11, 15 6, 18 6" />
+      {/* 另一条曲线：在交汇处(12,12)居中断开成两段；两段取自同一条平滑S曲线的对应片段，
+          两端切线一致、缝隙居中，拼接处自然无偏差 */}
+      <path d="M4 6 C 7 6, 11 8.5, 11.072 10.032" />
+      <path d="M12.912 13.968 C 13 15.5, 17 18, 18 18" />
+      {/* 箭头：空心三角，整体右移与主线留出空隙，互不重叠 */}
+      <polygon points="22.5 6 20.3 4.5 20.3 7.5" fill="none" />
+      <polygon points="22.5 18 20.3 16.5 20.3 19.5" fill="none" />
     </svg>
   )
 }
@@ -125,14 +130,12 @@ export function IconRepeat({ className, one }: IconRepeatProps) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M17 1l4 4-4 4" />
-      <path d="M3 11V9a4 4 0 014-4h14" />
-      <path d="M7 23l-4-4 4-4" />
-      <path d="M21 13v2a4 4 0 01-4 4H3" />
+      {/* 上：主线 + 右箭头合一（交汇处无线帽白点） */}
+      <path d="M3 11 V9 a4 4 0 0 1 4-4 H17 L21 5 L17 9" />
+      {/* 下：主线 + 左箭头合一 */}
+      <path d="M21 13 V15 a4 4 0 0 1-4 4 H7 L3 19 L7 15" />
       {one ? (
-        <text x="13" y="15" fill="currentColor" stroke="none" fontSize="7" fontWeight="700">
-          1
-        </text>
+        <path d="M12 10 v4 M10.3 10.6 h1.7" />
       ) : null}
     </svg>
   )

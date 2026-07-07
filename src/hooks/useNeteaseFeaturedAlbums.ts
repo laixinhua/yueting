@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { EbnrApiError } from '../api/ebnr'
 import { FEATURED_ALBUM_COUNT, NETEASE_FEATURED_ALBUM_CANDIDATES } from '../data/neteaseAlbums'
 import type { Playlist } from '../types'
@@ -70,5 +70,17 @@ export function useNeteaseFeaturedAlbums() {
     }
   }, [])
 
-  return { albums, loading, error }
+  const refresh = useCallback(async () => {
+    try {
+      const list = await fetchFeaturedAlbumsFresh()
+      if (list.length > 0) {
+        setAlbums(list)
+        for (const a of list) prefetchCover(a.coverUrl)
+      }
+    } catch {
+      /* 换一换失败：保留当前列表 */
+    }
+  }, [])
+
+  return { albums, loading, error, refresh }
 }

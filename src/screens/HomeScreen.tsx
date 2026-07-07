@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { usePlayer } from '../context/PlayerContext'
 import { useSongCatalog } from '../context/SongCatalogContext'
 import { useNeteaseRecommendedSongs } from '../hooks/useNeteaseRecommendedSongs'
@@ -29,14 +29,31 @@ function getGreeting() {
 
 export function HomeScreen() {
   const { playSong, openPlayer } = usePlayer()
-  const { playlists: dailyPlaylists, loading: dailyLoading, error: dailyError } = useNeteaseFeaturedPlaylists()
-  const { albums: featuredAlbums, loading: albumsLoading, error: albumsError } = useNeteaseFeaturedAlbums()
   const {
     songs: recommendedSongs,
     loading: recommendLoading,
     error: recommendError,
     refresh: refreshRecommended,
   } = useNeteaseRecommendedSongs()
+  const {
+    playlists: dailyPlaylists,
+    loading: dailyLoading,
+    error: dailyError,
+    refresh: refreshDaily,
+  } = useNeteaseFeaturedPlaylists()
+  const {
+    albums: featuredAlbums,
+    loading: albumsLoading,
+    error: albumsError,
+    refresh: refreshAlbums,
+  } = useNeteaseFeaturedAlbums()
+  const onRefreshDaily = useCallback(async () => {
+    await refreshDaily()
+  }, [refreshDaily])
+
+  const onRefreshAlbums = useCallback(async () => {
+    await refreshAlbums()
+  }, [refreshAlbums])
   const { upsertNeteaseSongs } = useSongCatalog()
   const { recentSongs } = useRecentPlaysContext()
   const [detailPlaylist, setDetailPlaylist] = useState<Playlist | null>(null)
@@ -97,7 +114,11 @@ export function HomeScreen() {
       </section>
 
       <section className="mb-8 min-w-0">
-        <SectionHeader title="每日推荐" />
+        <SectionHeader
+          title="每日推荐"
+          action={dailyPlaylists.length > 0 ? '换一换' : undefined}
+          onAction={onRefreshDaily}
+        />
         {dailyLoading ? (
           <HorizontalCardSkeleton count={4} />
         ) : dailyError ? (
@@ -132,7 +153,11 @@ export function HomeScreen() {
       </section>
 
       <section className="mb-8 min-w-0">
-        <SectionHeader title="推荐专辑" />
+        <SectionHeader
+          title="推荐专辑"
+          action={featuredAlbums.length > 0 ? '换一换' : undefined}
+          onAction={onRefreshAlbums}
+        />
         {albumsLoading ? (
           <HorizontalCardSkeleton count={4} />
         ) : albumsError ? (

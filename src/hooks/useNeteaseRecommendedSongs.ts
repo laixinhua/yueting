@@ -70,12 +70,9 @@ export function useNeteaseRecommendedSongs() {
   }, [refreshFromNetwork])
 
   const refresh = useCallback(() => {
-    if (poolRef.current.length > 0) {
-      pickDisplay(poolRef.current)
-      return
-    }
+    // 换一换：重新从网上拉取最新曲目池（来源歌单会随时间更新），而非仅打乱缓存
     void refreshFromNetwork()
-  }, [refreshFromNetwork, pickDisplay])
+  }, [refreshFromNetwork])
 
   return { songs, loading, error, refresh, reload: refreshFromNetwork }
 }

@@ -37,6 +37,8 @@ export function useAudioPlayer() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /** 同一播放尝试只上报一次错误，避免「该歌曲暂无法播放」与「网络错误」叠加成两条提示 */
+  const errorShownSessionRef = useRef(false)
 
   const cancelNativeTrackEnd = useCallback(() => {
     nativeEndScheduledAtRef.current = 0
@@ -241,6 +243,7 @@ export function useAudioPlayer() {
     const onPlay = () => {
       setIsPlaying(true)
       setError(null)
+      errorShownSessionRef.current = false
       pendingAutoplayRef.current = false
       intendedPlayingRef.current = true
       const src = audio.currentSrc || audio.src
@@ -270,15 +273,16 @@ export function useAudioPlayer() {
         const recovered = await mediaRecoverRef.current?.()
         if (recovered) return
         const code = audio.error?.code
-        const message =
-          code === MediaError.MEDIA_ERR_NETWORK
+        const src = audio.currentSrc || audio.src || ''
+        const isNeteaseCdnBlocked = /music\.126\.net/i.test(src)
+        const message = isNeteaseCdnBlocked
+          ? '当前网络无法连接网易云音频服务器（music.126.net 被屏蔽），请切换网络或使用代理后重试'
+          : code === MediaError.MEDIA_ERR_NETWORK
             ? '音频加载失败，请检查网络'
             : code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED
               ? '该歌曲暂无法播放，请换一首'
               : '播放失败，请换一首或稍后重试'
-        setError(message)
-        setIsLoading(false)
-        setIsPlaying(false)
+        commitError(message)
       })()
     }
     const onEnded = () => fireEndedOnce(audio)
@@ -442,7 +446,8 @@ export function useAudioPlayer() {
     endedSrcRef.current = ''
     stallCheckRef.current = { time: 0, at: 0 }
 
-    setError(null)
+    // 注意：不要在此清除 error，否则会抹掉同一播放尝试中 onError 已展示的错误。
+    // 新歌曲的错误清理由 beginSession()/onPlay 负责。
     setIsLoading(true)
     setCurrentTime(0)
     lastUiTimeRef.current = 0
@@ -580,6 +585,7 @@ export function useAudioPlayer() {
     resetElement(audio)
     setIsLoading(false)
     setError(null)
+    errorShownSessionRef.current = false
   }, [resetElement])
 
   const seek = useCallback((ratio: number) => {
@@ -602,21 +608,36 @@ export function useAudioPlayer() {
     mediaRecoverRef.current = handler
   }, [])
 
-  const reportError = useCallback((message: string | null) => {
-    const audio = audioRef.current
-    if (message && audio) {
-      loadGenRef.current += 1
-      resetElement(audio)
-    } else {
-      setError(message)
-      setIsLoading(false)
-      setIsPlaying(false)
-      return
-    }
+  /** 统一的错误上报入口：同一播放会话只展示第一条错误 */
+  const commitError = useCallback((message: string) => {
+    if (errorShownSessionRef.current) return
+    errorShownSessionRef.current = true
     setError(message)
     setIsLoading(false)
     setIsPlaying(false)
-  }, [resetElement])
+  }, [])
+
+  /** 开始一次新的播放尝试，清空上一首歌的错误展示与去重状态 */
+  const beginSession = useCallback(() => {
+    errorShownSessionRef.current = false
+    setError(null)
+  }, [])
+
+  const reportError = useCallback(
+    (message: string | null) => {
+      if (message == null) {
+        setError(null)
+        return
+      }
+      const audio = audioRef.current
+      if (audio) {
+        loadGenRef.current += 1
+        resetElement(audio)
+      }
+      commitError(message)
+    },
+    [resetElement, commitError],
+  )
 
   return {
     currentTime,
@@ -633,6 +654,7 @@ export function useAudioPlayer() {
     setOnEnded,
     setMediaRecover,
     reportError,
+    beginSession,
     getSrc: () => audioRef.current?.src ?? '',
     hasPendingAutoplay: () => pendingAutoplayRef.current,
     tryResumePlayback,

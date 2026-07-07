@@ -1,11 +1,19 @@
 import { EbnrApiError } from '../api/ebnr'
 
-/** 将播放异常转为用户可读提示 */
+/** 将播放异常转为用户可读提示（英文/未知异常统一转为中文） */
 export function formatPlayError(err: unknown): string {
   if (err instanceof EbnrApiError) return err.message
   if (err instanceof Error) {
     const msg = err.message.trim()
-    if (msg) return msg
+    if (msg) {
+      // 已含中文，直接展示
+      if (/[一-龥]/.test(msg)) return msg
+      // 英文/未知异常 -> 友好中文
+      if (/timeout|timed out|超时/i.test(msg)) return '获取播放地址超时，请稍后重试'
+      if (/cors|blocked by|not allowed/i.test(msg)) return '音乐接口被浏览器拦截，请稍后重试'
+      if (/fail|refused|reset|abort|unreachable|network|connect/i.test(msg)) return '网络连接失败，请检查网络后重试'
+      return '播放失败，请换一首或稍后重试'
+    }
   }
   return '播放失败，请换一首或稍后重试'
 }

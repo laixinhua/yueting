@@ -26,9 +26,29 @@ type UrlMemoryEntry = { url: string; fetchedAt: number }
 
 const urlMemory = new Map<number, UrlMemoryEntry>()
 
+/** 播放地址获取超时（毫秒）。EBNR 在部分网络环境下会挂起无响应，
+ *  必须加前端超时兜底，避免“点击歌曲后一直加载中”无法退出。 */
+const AUDIO_URL_TIMEOUT_MS = 9000
+
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error(message)), ms)
+    promise.then(
+      (value) => {
+        window.clearTimeout(timer)
+        resolve(value)
+      },
+      (err) => {
+        window.clearTimeout(timer)
+        reject(err)
+      },
+    )
+  })
+}
+
 async function fetchAudioUrlFromApi(neteaseId: number): Promise<string | null> {
-  const audio = await getAudioUrl(neteaseId)
-  const url = audio.url?.trim()
+  const audio = await withTimeout(getAudioUrl(neteaseId), AUDIO_URL_TIMEOUT_MS, '获取播放地址超时')
+  const url = audio?.url?.trim()
   return url || null
 }
 
@@ -160,20 +180,46 @@ export async function resolveNeteasePlayUrl(
 ): Promise<string> {
   if (!options?.forceRefresh) {
     const cached = readCachedPlayUrl(neteaseId)
-    if (cached) return cached
+    if (cached) return toPlayableSrc(cached)
   } else {
     invalidateNeteaseAudioCache(neteaseId)
   }
 
   const url = await fetchAudioUrlFromApi(neteaseId)
-  if (!url) throw new Error('未获取到播放地址')
-
+  if (!url) {
+    console.warn('[resolveNeteasePlayUrl] EBNR 未返回播放地址', neteaseId)
+    throw new Error('音乐服务未返回播放地址，请稍后重试')
+  }
+  console.log('[resolveNeteasePlayUrl] 已获取播放地址', neteaseId, 'len', url.length)
   rememberPlayableUrl(neteaseId, url)
-  return url
+  return toPlayableSrc(url)
 }
 
 export function getCachedNeteasePlayUrl(neteaseId: number): string | null {
   return readCachedPlayUrl(neteaseId)
+}
+
+/** 可选音频中继：配置后，CDN 直链会被编码交给该中继（中继在服务端拉取 CDN 再回传），
+ *  从而绕开设备侧对 *.music.126.net 的网络屏蔽。形如 https://relay.example.com/proxy?u= */
+const AUDIO_RELAY_BASE = (import.meta.env.VITE_AUDIO_RELAY as string | undefined)?.trim()
+
+/**
+ * 将网易云 CDN 直链转换为可播放地址。
+ *
+ * 实测用户的设备网络屏蔽了 *.music.126.net（连不上 / Connection reset），
+ * 因此直连与“下载到本地”都拿不到音频字节——这是网络层屏蔽，非 App bug。
+ * 歌词走的是另一条主机（apis.netstart.cn），所以歌词能显示而音频放不了。
+ *
+ * 若部署了可达的音频中继，配置 VITE_AUDIO_RELAY 即可让本函数把直链交给中继，
+ * 否则原样返回（依赖设备网络能直连 CDN）。
+ */
+export async function toPlayableSrc(rawUrl: string): Promise<string> {
+  const trimmed = rawUrl.trim()
+  if (!trimmed || !/^https?:\/\//i.test(trimmed)) return trimmed
+  if (AUDIO_RELAY_BASE) {
+    return `${AUDIO_RELAY_BASE}${encodeURIComponent(trimmed)}`
+  }
+  return trimmed
 }
 
 /** 为任意歌曲解析最终播放 URL */
@@ -181,6 +227,17 @@ export async function resolveSongPlayUrl(
   song: Song,
   options?: { forceRefresh?: boolean },
 ): Promise<string> {
+  if (song.source === 'yaohud') {
+    // 狐妖源：搜歌时未带播放地址，播放时按需解析
+    // qq 源非收费歌返回 302 直链；VIP 歌或其它音源返回 null，需回退
+    const { getPlayUrlForSong } = await import('../api/musicAggregator')
+    const url = await getPlayUrlForSong(song)
+    if (!url) {
+      throw new Error('狐妖源暂无可播放地址（可能是 VIP 歌曲，或该音源不支持播放）')
+    }
+    return url
+  }
+
   if (song.url && song.source !== 'netease') return song.url
 
   const ncmId = song.neteaseId ?? parseNeteaseId(song.id)
