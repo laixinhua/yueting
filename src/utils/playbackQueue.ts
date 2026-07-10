@@ -1,4 +1,5 @@
 import type { Song } from '../types'
+import { loadJSON, saveJSON, removeKey } from './storage'
 
 export const QUEUE_MAX = 500
 const STORAGE_KEY = 'yueting-playback-queue'
@@ -30,26 +31,21 @@ export function resolveQueueSongs(
     .slice(0, QUEUE_MAX)
 }
 
-export function loadStoredQueue(): StoredPlaybackQueue | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as StoredPlaybackQueue
-    if (parsed?.version !== STORAGE_VERSION || !Array.isArray(parsed.songIds)) return null
-    const queueIndex = Number.isFinite(parsed.queueIndex) ? parsed.queueIndex : 0
-    return {
-      version: STORAGE_VERSION,
-      songIds: parsed.songIds.filter((id) => typeof id === 'string' && id !== '__none__'),
-      queueIndex: Math.max(0, queueIndex),
-    }
-  } catch {
-    return null
+export async function loadStoredQueue(): Promise<StoredPlaybackQueue | null> {
+  const parsed = await loadJSON<StoredPlaybackQueue | null>(STORAGE_KEY, null)
+  if (parsed == null) return null
+  if (parsed?.version !== STORAGE_VERSION || !Array.isArray(parsed.songIds)) return null
+  const queueIndex = Number.isFinite(parsed.queueIndex) ? parsed.queueIndex : 0
+  return {
+    version: STORAGE_VERSION,
+    songIds: parsed.songIds.filter((id) => typeof id === 'string' && id !== '__none__'),
+    queueIndex: Math.max(0, queueIndex),
   }
 }
 
-export function saveStoredQueue(songIds: string[], queueIndex: number): void {
+export async function saveStoredQueue(songIds: string[], queueIndex: number): Promise<void> {
   if (songIds.length === 0) {
-    localStorage.removeItem(STORAGE_KEY)
+    await removeKey(STORAGE_KEY)
     return
   }
   const payload: StoredPlaybackQueue = {
@@ -57,13 +53,13 @@ export function saveStoredQueue(songIds: string[], queueIndex: number): void {
     songIds,
     queueIndex: Math.max(0, Math.min(queueIndex, songIds.length - 1)),
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
+  await saveJSON(STORAGE_KEY, payload)
 }
 
-export function restoreQueueFromStorage(
+export async function restoreQueueFromStorage(
   resolve: (id: string) => Song | undefined,
-): { queue: Song[]; queueIndex: number } | null {
-  const stored = loadStoredQueue()
+): Promise<{ queue: Song[]; queueIndex: number } | null> {
+  const stored = await loadStoredQueue()
   if (!stored || stored.songIds.length === 0) return null
 
   const queue: Song[] = []

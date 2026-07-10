@@ -1,25 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Song } from '../types'
 import { isNeteaseSong } from '../utils/neteaseSong'
+import { loadJSON, saveJSON } from '../utils/storage'
 
 const KEY = 'yueting-netease-songs'
 
-function loadMap(): Record<string, Song> {
-  try {
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return {}
-    const parsed = JSON.parse(raw) as Record<string, Song>
-    return parsed && typeof parsed === 'object' ? parsed : {}
-  } catch {
-    return {}
-  }
-}
-
 export function useNeteaseSongStore() {
-  const [map, setMap] = useState<Record<string, Song>>(loadMap)
+  const [map, setMap] = useState<Record<string, Song>>({})
 
   useEffect(() => {
-    localStorage.setItem(KEY, JSON.stringify(map))
+    let cancelled = false
+    void loadJSON<Record<string, Song>>(KEY, {}).then((data) => {
+      if (!cancelled) setMap(data && typeof data === 'object' ? data : {})
+    })
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    void saveJSON(KEY, map)
   }, [map])
 
   const upsertNeteaseSong = useCallback((song: Song) => {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { DeviceOverride, DeviceType } from '../types/device'
+import { loadJSON, saveJSON } from '../utils/storage'
 
 const OVERRIDE_KEY = 'yueting-device-override'
 
@@ -15,25 +16,29 @@ function detectFromWidth(width: number): DeviceType {
   return 'phone'
 }
 
-export function getDeviceOverride(): DeviceOverride {
-  try {
-    const v = localStorage.getItem(OVERRIDE_KEY) as DeviceOverride | null
-    if (v === 'phone' || v === 'tablet' || v === 'tv' || v === 'auto') return v
-  } catch {
-    /* ignore */
-  }
+export async function getDeviceOverride(): Promise<DeviceOverride> {
+  const v = await loadJSON<DeviceOverride | null>(OVERRIDE_KEY, null)
+  if (v === 'phone' || v === 'tablet' || v === 'tv' || v === 'auto') return v
   return 'auto'
 }
 
-export function setDeviceOverride(value: DeviceOverride) {
-  localStorage.setItem(OVERRIDE_KEY, value)
+export async function setDeviceOverride(value: DeviceOverride): Promise<void> {
+  await saveJSON(OVERRIDE_KEY, value)
 }
 
 export function useDevice() {
-  const [override, setOverrideState] = useState<DeviceOverride>(getDeviceOverride)
+  const [override, setOverrideState] = useState<DeviceOverride>('auto')
   const [detected, setDetected] = useState<DeviceType>(() =>
     typeof window !== 'undefined' ? detectFromWidth(window.innerWidth) : 'phone',
   )
+
+  useEffect(() => {
+    let cancelled = false
+    void getDeviceOverride().then((v) => {
+      if (!cancelled) setOverrideState(v)
+    })
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
     const update = () => {
@@ -48,7 +53,7 @@ export function useDevice() {
   const device: DeviceType = override === 'auto' ? detected : override
 
   const setOverride = (value: DeviceOverride) => {
-    setDeviceOverride(value)
+    void setDeviceOverride(value)
     setOverrideState(value)
   }
 

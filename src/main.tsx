@@ -9,7 +9,7 @@ import './index.css'
 import App from './App.tsx'
 
 async function bootstrap() {
-  applyTheme(loadStoredTheme())
+  void loadStoredTheme().then(applyTheme)
 
   const playlists = readFeaturedPlaylistsCacheStale()
   const albums = readFeaturedAlbumsCacheStale()

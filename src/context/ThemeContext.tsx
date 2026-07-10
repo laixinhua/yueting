@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useLayoutEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useState, type ReactNode } from 'react'
 import { applyTheme, loadStoredTheme } from '../theme/initTheme'
 import type { ThemeMode } from '../types/theme'
 
@@ -12,21 +12,29 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>(loadStoredTheme)
+  const [theme, setThemeState] = useState<ThemeMode>('dark')
+
+  useEffect(() => {
+    let cancelled = false
+    void loadStoredTheme().then((m) => {
+      if (!cancelled) setThemeState(m)
+    })
+    return () => { cancelled = true }
+  }, [])
 
   useLayoutEffect(() => {
-    applyTheme(theme)
+    void applyTheme(theme)
   }, [theme])
 
   const setTheme = useCallback((mode: ThemeMode) => {
-    applyTheme(mode)
+    void applyTheme(mode)
     setThemeState(mode)
   }, [])
 
   const toggleTheme = useCallback(() => {
     setThemeState((t) => {
       const next = t === 'dark' ? 'light' : 'dark'
-      applyTheme(next)
+      void applyTheme(next)
       return next
     })
   }, [])

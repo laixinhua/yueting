@@ -1,18 +1,15 @@
 import type { ThemeMode } from '../types/theme'
+import { loadJSON, saveJSON } from '../utils/storage'
 
 const KEY = 'yueting-theme'
 
-export function loadStoredTheme(): ThemeMode {
-  try {
-    const v = localStorage.getItem(KEY)
-    if (v === 'light' || v === 'dark') return v
-  } catch {
-    /* ignore */
-  }
+export async function loadStoredTheme(): Promise<ThemeMode> {
+  const v = await loadJSON<string | null>(KEY, null)
+  if (v === 'light' || v === 'dark') return v
   return 'dark'
 }
 
-export function applyTheme(mode: ThemeMode) {
+export async function applyTheme(mode: ThemeMode) {
   const root = document.documentElement
   root.classList.remove('dark', 'light')
   root.classList.add(mode)
@@ -20,7 +17,7 @@ export function applyTheme(mode: ThemeMode) {
   root.style.colorScheme = mode
 
   try {
-    localStorage.setItem(KEY, mode)
+    await saveJSON(KEY, mode)
   } catch {
     /* ignore */
   }

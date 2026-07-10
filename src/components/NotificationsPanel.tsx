@@ -1,29 +1,28 @@
 import { useEffect, useState } from 'react'
 import { initialNotifications, type AppNotification } from '../data/mockData'
 import { Overlay } from './Overlay'
+import { loadJSON, saveJSON } from '../utils/storage'
 
 const READ_KEY = 'yueting-notifications-read'
-
-function loadReadIds(): string[] {
-  try {
-    const raw = localStorage.getItem(READ_KEY)
-    if (raw) return JSON.parse(raw) as string[]
-  } catch {
-    /* ignore */
-  }
-  return ['n3']
-}
 
 interface NotificationsPanelProps {
   onClose: () => void
 }
 
 export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
-  const [readIds, setReadIds] = useState<string[]>(loadReadIds)
+  const [readIds, setReadIds] = useState<string[]>(['n3'])
   const [items] = useState<AppNotification[]>(initialNotifications)
 
   useEffect(() => {
-    localStorage.setItem(READ_KEY, JSON.stringify(readIds))
+    let cancelled = false
+    void loadJSON<string[]>(READ_KEY, ['n3']).then((data) => {
+      if (!cancelled) setReadIds(Array.isArray(data) ? data : ['n3'])
+    })
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    void saveJSON(READ_KEY, readIds)
   }, [readIds])
 
   const markRead = (id: string) => {
@@ -46,7 +45,7 @@ export function NotificationsPanel({ onClose }: NotificationsPanelProps) {
                 type="button"
                 onClick={() => markRead(item.id)}
                 className={`w-full p-4 rounded-xl border text-left transition-colors ${
-                  read ? 'bg-surface-highlight/30 border-white/5' : 'bg-white/10 border-white/20'
+                  read ? 'bg-surface-high-light/30 border-white/5' : 'bg-white/10 border-white/20'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">

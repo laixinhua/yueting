@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { loadJSON, saveJSON } from '../utils/storage'
 
 const KEY = 'yueting-favorites'
 
@@ -7,24 +8,19 @@ function sanitizeIds(ids: string[]): string[] {
   return ids.filter((id) => typeof id === 'string' && id.length > 0 && !/^\d+$/.test(id))
 }
 
-function loadIds(): string[] {
-  try {
-    const raw = localStorage.getItem(KEY)
-    if (raw) {
-      const parsed = JSON.parse(raw) as string[]
-      if (Array.isArray(parsed)) return sanitizeIds(parsed)
-    }
-  } catch {
-    /* ignore */
-  }
-  return []
-}
-
 export function useFavorites() {
-  const [ids, setIds] = useState<string[]>(loadIds)
+  const [ids, setIds] = useState<string[]>([])
 
   useEffect(() => {
-    localStorage.setItem(KEY, JSON.stringify(ids))
+    let cancelled = false
+    void loadJSON<string[]>(KEY, []).then((data) => {
+      if (!cancelled) setIds(Array.isArray(data) ? sanitizeIds(data) : [])
+    })
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    void saveJSON(KEY, ids)
   }, [ids])
 
   const isFavorite = useCallback((id: string) => ids.includes(id), [ids])

@@ -141,7 +141,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     queueIndexRef.current = idx
     setQueue(resolved)
     setQueueIndex(idx)
-    saveStoredQueue(
+    void saveStoredQueue(
       resolved.map((s) => s.id),
       idx,
     )
@@ -150,12 +150,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (restoredRef.current) return
-    restoredRef.current = true
-    const restored = restoreQueueFromStorage(getSongById)
-    if (!restored) return
-    const { list, index } = applyQueue(restored.queue, restored.queueIndex)
-    const song = list[index]
-    if (song) setCurrentSong(song)
+    let cancelled = false
+    void (async () => {
+      const restored = await restoreQueueFromStorage(getSongById)
+      // catalog（含网易云歌曲库）可能尚未异步加载完，此时解析不出歌曲：
+      // 不标记已完成，等 getSongById 引用变化后本 effect 重试。
+      if (cancelled || !restored) return
+      restoredRef.current = true
+      const { list, index } = applyQueue(restored.queue, restored.queueIndex)
+      const song = list[index]
+      if (song) setCurrentSong(song)
+    })()
+    return () => { cancelled = true }
   }, [getSongById, applyQueue])
 
   useEffect(() => {
@@ -389,7 +395,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         const resolved = resolveQueueSongs(prev, getSongById)
         if (resolved.some((s) => s.id === target.id)) return resolved
         const next = resolveQueueSongs([...resolved, target], getSongById)
-        saveStoredQueue(
+        void saveStoredQueue(
           next.map((s) => s.id),
           queueIndex,
         )
@@ -410,7 +416,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           [...without.slice(0, insertAt), target, ...without.slice(insertAt)],
           getSongById,
         )
-        saveStoredQueue(
+        void saveStoredQueue(
           next.map((s) => s.id),
           queueIndex,
         )
@@ -426,7 +432,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (index < 0 || index >= prev.length) return prev
         const next = prev.filter((_, i) => i !== index)
         if (next.length === 0) {
-          saveStoredQueue([], 0)
+          void saveStoredQueue([], 0)
           setQueueIndex(0)
           setCurrentSong(EMPTY_CURRENT_SONG)
           audio.pause()
@@ -447,7 +453,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         }
 
         setQueueIndex(newIndex)
-        saveStoredQueue(
+        void saveStoredQueue(
           next.map((s) => s.id),
           newIndex,
         )
@@ -462,7 +468,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setQueueIndex(0)
     setCurrentSong(EMPTY_CURRENT_SONG)
     loadedSongIdRef.current = null
-    saveStoredQueue([], 0)
+    void saveStoredQueue([], 0)
     audio.stop()
   }, [audio])
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Song } from '../types'
 import { LIST_DISPLAY_LIMIT } from '../utils/listLimit'
+import { loadJSON, saveJSON } from '../utils/storage'
 
 const KEY = 'yueting-recent-plays'
 const STORE_MAX = 100
@@ -10,23 +11,21 @@ interface RecentEntry {
   playedAt: number
 }
 
-function loadEntries(): RecentEntry[] {
-  try {
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw) as RecentEntry[]
-    if (!Array.isArray(parsed)) return []
-    return parsed.filter((e) => e && typeof e.songId === 'string')
-  } catch {
-    return []
-  }
-}
-
 export function useRecentPlays(getSongById: (id: string) => Song | undefined) {
-  const [entries, setEntries] = useState<RecentEntry[]>(loadEntries)
+  const [entries, setEntries] = useState<RecentEntry[]>([])
 
   useEffect(() => {
-    localStorage.setItem(KEY, JSON.stringify(entries))
+    let cancelled = false
+    void loadJSON<RecentEntry[]>(KEY, []).then((data) => {
+      if (!cancelled) {
+        setEntries(Array.isArray(data) ? data.filter((e) => e && typeof e.songId === 'string') : [])
+      }
+    })
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    void saveJSON(KEY, entries)
   }, [entries])
 
   const recordPlay = useCallback((songId: string) => {

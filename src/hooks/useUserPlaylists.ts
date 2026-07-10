@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Playlist, Song } from '../types'
+import { loadJSON, saveJSON } from '../utils/storage'
 
 const KEY = 'yueting-user-playlists'
 
@@ -24,33 +25,18 @@ export interface StoredUserPlaylist {
   songs: Song[]
 }
 
-function loadStored(): StoredUserPlaylist[] {
-  try {
-    const raw = localStorage.getItem(KEY)
-    if (raw) {
-      const parsed = JSON.parse(raw) as Partial<StoredUserPlaylist>[]
-      if (Array.isArray(parsed)) {
-        return parsed.map((p) => {
-          const songs = Array.isArray(p.songs) ? p.songs : []
-          const songIds = Array.isArray(p.songIds)
-            ? p.songIds
-            : songs.map((s) => s.id)
-          return {
-            id: p.id ?? `user-${crypto.randomUUID()}`,
-            title: p.title?.trim() || '新建歌单',
-            description: p.description,
-            gradient: p.gradient ?? PRESET_GRADIENTS[0]!.gradient,
-            playAccent: p.playAccent ?? PRESET_GRADIENTS[0]!.playAccent,
-            songIds,
-            songs,
-          }
-        })
-      }
-    }
-  } catch {
-    /* ignore */
+function normalizeStored(p: Partial<StoredUserPlaylist>): StoredUserPlaylist {
+  const songs = Array.isArray(p.songs) ? p.songs : []
+  const songIds = Array.isArray(p.songIds) ? p.songIds : songs.map((s) => s.id)
+  return {
+    id: p.id ?? `user-${crypto.randomUUID()}`,
+    title: p.title?.trim() || '新建歌单',
+    description: p.description,
+    gradient: p.gradient ?? PRESET_GRADIENTS[0]!.gradient,
+    playAccent: p.playAccent ?? PRESET_GRADIENTS[0]!.playAccent,
+    songIds,
+    songs,
   }
-  return []
 }
 
 function pickTheme(index: number) {
@@ -58,10 +44,18 @@ function pickTheme(index: number) {
 }
 
 export function useUserPlaylists() {
-  const [stored, setStored] = useState<StoredUserPlaylist[]>(loadStored)
+  const [stored, setStored] = useState<StoredUserPlaylist[]>([])
 
   useEffect(() => {
-    localStorage.setItem(KEY, JSON.stringify(stored))
+    let cancelled = false
+    void loadJSON<StoredUserPlaylist[]>(KEY, []).then((data) => {
+      if (!cancelled) setStored(Array.isArray(data) ? data.map(normalizeStored) : [])
+    })
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    void saveJSON(KEY, stored)
   }, [stored])
 
   const createPlaylist = useCallback((title: string, songs: Song[] = []) => {
@@ -102,7 +96,6 @@ export function useUserPlaylists() {
           const title = patch.title?.trim() || p.title
           const description = patch.description ?? p.description
           if (patch.songIds) {
-            // 按新顺序保留已有歌曲实体；新增 id 若不在 songs 中则降级为仅 id
             const songMap = new Map(p.songs.map((s) => [s.id, s]))
             const songs = patch.songIds
               .map((sid) => songMap.get(sid))
