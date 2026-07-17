@@ -4,9 +4,11 @@ import { App } from '@capacitor/app'
 import { EMPTY_CURRENT_SONG, isEmptyPlaceholder } from '../constants/emptySong'
 import { useAudioPlayer } from '../hooks/useAudioPlayer'
 import type { PlayMode, Song, TabId } from '../types'
+import { PLAY_MODE_CYCLE } from '../types'
 import { useRecentPlaysContext } from './RecentPlaysContext'
 import { useSongCatalog } from './SongCatalogContext'
 import { nextPlayMode } from '../utils/playMode'
+import { loadJSON, saveJSON } from '../utils/storage'
 import { resolveQueueSongs, restoreQueueFromStorage, saveStoredQueue } from '../utils/playbackQueue'
 import { formatPlayError } from '../utils/playError'
 import { isNeteaseSong, invalidateNeteaseAudioCache, parseNeteaseId, resolveNeteasePlayUrl, resolveSongPlayUrl, warmNeteaseAudioUrl } from '../utils/neteaseSong'
@@ -17,6 +19,8 @@ import {
   persistSleepTimerEndsAt,
   type SleepTimerKind,
 } from '../utils/sleepTimer'
+
+const PLAY_MODE_KEY = 'yueting-play-mode'
 
 interface PlayOptions {
   /** 「播放全部」时传入完整列表，会追加到现有播放队列（不覆盖） */
@@ -128,6 +132,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const audio = useAudioPlayer()
   const { recordPlay } = useRecentPlaysContext()
   const { getSongById, upsertNeteaseSong } = useSongCatalog()
+
+  // 播放模式持久化：启动时从 Preferences 读取，避免划掉 APP 后回到默认「循环」
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const saved = await loadJSON<PlayMode | null>(PLAY_MODE_KEY, null)
+      if (cancelled) return
+      if (saved && PLAY_MODE_CYCLE.includes(saved)) {
+        setPlayMode(saved)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const resolveSong = useCallback(
     (song: Song) => getSongById(song.id) ?? song,
@@ -384,7 +403,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [audio])
 
   const cyclePlayMode = useCallback(() => {
-    setPlayMode((m) => nextPlayMode(m))
+    const next = nextPlayMode(playModeRef.current)
+    setPlayMode(next)
+    void saveJSON(PLAY_MODE_KEY, next)
   }, [])
 
   const addToQueue = useCallback(
