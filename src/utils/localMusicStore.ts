@@ -660,3 +660,34 @@ export function storedToSong(track: StoredLocalTrack): Song {
     coverUrl: track.coverUrl,
   }
 }
+
+/** 写回本地歌曲的在线歌词（按歌名搜索到后绑定 neteaseId + lrc，避免重复搜索） */
+export async function updateLocalTrackLyric(
+  id: string,
+  lrc: string,
+  neteaseId: number,
+): Promise<void> {
+  const db = await openDb()
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite')
+      const store = tx.objectStore(STORE)
+      const req = store.get(id)
+      req.onsuccess = () => {
+        const track = req.result as StoredLocalTrack | undefined
+        if (!track) {
+          resolve()
+          return
+        }
+        track.lrc = lrc
+        track.neteaseId = neteaseId
+        store.put(track)
+      }
+      req.onerror = () => reject(req.error)
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    })
+  } finally {
+    db.close()
+  }
+}
