@@ -1,6 +1,6 @@
 export type SongGenre = 'pop' | 'rock' | 'hiphop' | 'electronic' | 'jazz' | 'classical' | 'indie' | 'sleep'
 
-export type SongSource = 'mock' | 'local' | 'netease' | 'qq' | 'kugou' | 'yaohud'
+export type SongSource = 'mock' | 'local' | 'netease' | 'qq' | 'kugou' | 'yaohud' | 'cc'
 
 export interface Song {
   id: string
@@ -47,4 +47,4 @@ export interface Playlist {
   coverUrl?: string
 }
 
-export type TabId = 'home' | 'search' | 'library'
+export type TabId = 'home' | 'search' | 'library' | 'cc'

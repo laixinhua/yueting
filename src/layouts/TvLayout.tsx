@@ -28,7 +28,7 @@ export function TvLayout() {
                   active ? 'bg-white/15 text-white' : 'bg-surface-highlight text-white/60 hover:text-white'
                 }`}
               >
-                <Icon className="w-6 h-6" filled={active && id !== 'search'} />
+                <Icon className="w-6 h-6" filled={active && id !== 'search' && id !== 'cc'} />
                 {label}
               </button>
             )

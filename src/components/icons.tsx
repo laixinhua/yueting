@@ -38,6 +38,14 @@ export function IconLibrary({ className, filled }: IconProps) {
   )
 }
 
+export function IconCcLibrary({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 18V6l10-2v12M9 18a3 3 0 11-6 0 3 3 0 016 0zm10-2a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  )
+}
+
 export function IconPlay({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">

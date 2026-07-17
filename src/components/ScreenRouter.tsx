@@ -3,6 +3,7 @@ import { usePlayer } from '../context/PlayerContext'
 import { HomeScreen } from '../screens/HomeScreen'
 import { LibraryScreen } from '../screens/LibraryScreen'
 import { SearchScreen } from '../screens/SearchScreen'
+import { CcLibraryScreen } from '../screens/CcLibraryScreen'
 import { TvHomeScreen } from '../screens/tv/TvHomeScreen'
 
 interface ScreenRouterProps {
@@ -40,6 +41,9 @@ export function ScreenRouter({ variant = 'default' }: ScreenRouterProps) {
         <TabPanel active={currentTab === 'library'}>
           <LibraryScreen />
         </TabPanel>
+        <TabPanel active={currentTab === 'cc'}>
+          <CcLibraryScreen />
+        </TabPanel>
       </>
     )
   }
@@ -54,6 +58,9 @@ export function ScreenRouter({ variant = 'default' }: ScreenRouterProps) {
       </TabPanel>
       <TabPanel active={currentTab === 'library'}>
         <LibraryScreen />
+      </TabPanel>
+      <TabPanel active={currentTab === 'cc'}>
+        <CcLibraryScreen />
       </TabPanel>
     </>
   )

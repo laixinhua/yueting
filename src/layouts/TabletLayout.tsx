@@ -28,7 +28,7 @@ export function TabletLayout() {
                   active ? 'bg-white/10 text-white' : 'text-white/50 hover:bg-white/5 hover:text-white'
                 }`}
               >
-                <Icon className="w-6 h-6" filled={active && id !== 'search'} />
+                <Icon className="w-6 h-6" filled={active && id !== 'search' && id !== 'cc'} />
                 <span className="font-medium">{label}</span>
               </button>
             )

@@ -18,7 +18,7 @@ export function BottomNav() {
                 active ? 'text-white' : 'text-white/40'
               }`}
             >
-              <Icon className="w-6 h-6" filled={active && id !== 'search'} />
+              <Icon className="w-6 h-6" filled={active && id !== 'search' && id !== 'cc'} />
               <span className="text-[10px] font-medium">{label}</span>
             </button>
           )
