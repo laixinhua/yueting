@@ -20,6 +20,7 @@ async function bootstrap() {
 
   warmEbnrOnStartup()
   installNeteaseAudioUnlock()
+  // 官方开放平台 raw API 路径已停用（走 B：个人开发者无法直连，改用 EBNR 第三方代理，详见 neteaseOfficial.ts 头部说明）。
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>

@@ -227,17 +227,6 @@ export async function resolveSongPlayUrl(
   song: Song,
   options?: { forceRefresh?: boolean },
 ): Promise<string> {
-  if (song.source === 'yaohud') {
-    // 狐妖源：搜歌时未带播放地址，播放时按需解析
-    // qq 源非收费歌返回 302 直链；VIP 歌或其它音源返回 null，需回退
-    const { getPlayUrlForSong } = await import('../api/musicAggregator')
-    const url = await getPlayUrlForSong(song)
-    if (!url) {
-      throw new Error('狐妖源暂无可播放地址（可能是 VIP 歌曲，或该音源不支持播放）')
-    }
-    return url
-  }
-
   if (song.url && song.source !== 'netease') return song.url
 
   const ncmId = song.neteaseId ?? parseNeteaseId(song.id)

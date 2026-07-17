@@ -8,23 +8,7 @@ import { SearchResultRow } from '../components/SearchResultRow'
 import { SongRow } from '../components/SongRow'
 import { useMusicSearch } from '../hooks/useMusicSearch'
 import { getSearchCatalog, searchTypeLabels } from '../utils/searchCatalog'
-import type { Playlist, Song } from '../types'
-
-/** 在搜索结果中给非网易云的歌曲打来源标签（用于区分狐妖各音源） */
-function sourceBadgeOf(song: Song): { label: string; gradient: string } | null {
-  if (!song.source || song.source === 'netease') return null
-  if (song.source === 'yaohud') {
-    const sub = song.id.split('_')[1] ?? 'yaohud'
-    const map: Record<string, { label: string; gradient: string }> = {
-      qq: { label: '狐妖·QQ', gradient: 'from-yellow-500 via-orange-500 to-red-600' },
-      kg: { label: '狐妖·酷狗', gradient: 'from-green-500 via-teal-500 to-blue-600' },
-      apple: { label: '狐妖·Apple', gradient: 'from-gray-500 via-slate-500 to-zinc-600' },
-      kuwo: { label: '狐妖·酷我', gradient: 'from-pink-500 via-rose-500 to-red-600' },
-    }
-    return map[sub] ?? { label: '狐妖音乐', gradient: 'from-yellow-500 via-orange-500 to-red-600' }
-  }
-  return null
-}
+import type { Playlist } from '../types'
 
 interface SearchResultsScreenProps {
   query: string
@@ -41,7 +25,7 @@ export function SearchResultsScreen({ query, onClose }: SearchResultsScreenProps
 
   useEffect(() => {
     if (onlineSongs.length > 0) {
-      // 只把网易云歌曲入库（狐妖歌曲播放地址按需解析，不入库）
+      // 只把网易云歌曲入库
       upsertNeteaseSongs(onlineSongs.filter((s) => !s.source || s.source === 'netease'))
     }
   }, [onlineSongs, upsertNeteaseSongs])
@@ -74,10 +58,10 @@ export function SearchResultsScreen({ query, onClose }: SearchResultsScreenProps
         ? catalog.artists.length
         : catalog.albums.length
 
-  // 结果中实际出现的音源（用于顶部提示，如「网易云音乐 / 狐妖音乐」）
+  // 结果中实际出现的音源（用于顶部提示，如「网易云音乐」）
   const resultSourceLabels = Array.from(
     new Set(onlineSongs.map((s) => s.source || 'netease')),
-  ).map((s) => (s === 'yaohud' ? '狐妖音乐' : s === 'netease' ? '网易云音乐' : s))
+  ).map((s) => (s === 'netease' ? '网易云音乐' : s))
 
   const showLocalFallback =
     !loading &&
@@ -115,19 +99,9 @@ export function SearchResultsScreen({ query, onClose }: SearchResultsScreenProps
               {catalog.songs.length > 0 ? (
                 <div className="rounded-xl overflow-hidden bg-surface-highlight/30">
                   {catalog.songs.map((song, i) => {
-                    const badge = sourceBadgeOf(song)
                     return (
                       <div key={`${song.source ?? 'ne'}_${song.id}`}>
                         <SongRow song={song} index={i} onClick={() => playFromSongs(song)} />
-                        {badge ? (
-                          <div className="flex items-center px-4 -mt-1.5 pb-1.5">
-                            <span
-                              className={`px-1.5 py-0.5 text-[10px] leading-none rounded-full bg-gradient-to-r ${badge.gradient} text-white font-medium`}
-                            >
-                              {badge.label}
-                            </span>
-                          </div>
-                        ) : null}
                       </div>
                     )
                   })}

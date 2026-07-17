@@ -58,7 +58,7 @@ export interface HotSongsState {
 
 /**
  * 多源音乐搜索Hook
- * 同时搜索网易云、QQ音乐、酷狗音乐等多个平台
+ * 搜索网易云音乐
  */
 export function useMusicSearch(keyword: string, enabled = true): MusicSearchState {
   const [songs, setSongs] = useState<Song[]>([])
@@ -241,9 +241,6 @@ export async function getSongPlayUrl(song: Song): Promise<string | null> {
  */
 export function getSourceDisplayName(song: Song): string {
   switch (song.source) {
-    case 'qq': return 'QQ音乐'
-    case 'kugou': return '酷狗音乐'
-    case 'yaohud': return '狐妖音乐'
     case 'netease': return '网易云音乐'
     default: return '未知来源'
   }
@@ -254,9 +251,6 @@ export function getSourceDisplayName(song: Song): string {
  */
 export function getSourceIconClass(song: Song): string {
   switch (song.source) {
-    case 'qq': return 'from-blue-500 to-indigo-600'
-    case 'kugou': return 'from-green-500 to-teal-600'
-    case 'yaohud': return 'from-yellow-500 via-orange-500 to-red-600'
     case 'netease': return 'from-red-500 to-pink-600'
     default: return 'from-gray-500 to-gray-600'
   }

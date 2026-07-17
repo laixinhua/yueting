@@ -5,7 +5,7 @@ import { useNeteaseHotSongs } from './useNeteaseHotSongs'
 
 /**
  * 多源热门歌曲Hook
- * 整合网易云、QQ音乐、酷狗音乐的热门歌曲
+ * 整合网易云音乐的热门歌曲（当前仅官方接入 EBNR 代理）
  */
 export function useMultiSourceHotSongs() {
   const [songs, setSongs] = useState<Song[]>([])

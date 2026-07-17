@@ -45,7 +45,7 @@ export class MusicAggregator {
     // 按优先级对来源排序
     const sortedSources = [...this.sources].sort((a, b) => a.priority - b.priority)
     
-    // 并发搜索所有源（狐妖内部已串行+重试，网易云走独立域名不受影响）
+    // 并发搜索所有源（当前仅网易云音乐）
     const searchPromises = sortedSources.map(async (source) => {
       try {
         console.log(`【音乐聚合器】正在搜索源: ${source.name}`)
@@ -153,23 +153,11 @@ export class MusicAggregator {
       .trim()
   }
   
-  private getSourceFromName(sourceName: string): SongSource {
-    if (sourceName.includes('狐妖')) return 'yaohud'
-    if (sourceName.includes('QQ') || sourceName.includes('qq')) return 'qq'
-    if (sourceName.includes('酷狗') || sourceName.includes('kugou')) return 'kugou'
+  private getSourceFromName(_sourceName: string): SongSource {
     return 'netease'
   }
   
-  private getGradientBySource(sourceName: string): string {
-    if (sourceName.includes('狐妖')) {
-      return 'from-yellow-500 via-orange-500 to-red-600'  // 黄色到红色渐变色
-    }
-    if (sourceName.includes('QQ') || sourceName.includes('qq')) {
-      return 'from-blue-500 via-indigo-500 to-purple-600'
-    }
-    if (sourceName.includes('酷狗') || sourceName.includes('kugou')) {
-      return 'from-green-500 via-teal-500 to-blue-600'
-    }
+  private getGradientBySource(_sourceName: string): string {
     return 'from-red-500 via-pink-500 to-purple-600'  // 网易云
   }
   
@@ -192,7 +180,7 @@ export class MusicAggregator {
       }
       
       // 按来源优先级排序
-      const sourcePriority: Record<string, number> = { netease: 3, yaohud: 3, qq: 2, kugou: 1 }
+      const sourcePriority: Record<string, number> = { netease: 3 }
       const aPriority = sourcePriority[a.source || 'netease'] || 0
       const bPriority = sourcePriority[b.source || 'netease'] || 0
       
