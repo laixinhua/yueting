@@ -661,11 +661,19 @@ export function storedToSong(track: StoredLocalTrack): Song {
   }
 }
 
-/** 写回本地歌曲的在线歌词（按歌名搜索到后绑定 neteaseId + lrc，避免重复搜索） */
+export interface LocalTrackLyricUpdate {
+  /** 在线歌词文本（仅提供且非空时写回，避免覆盖已有歌词） */
+  lrc?: string
+  /** 网易云曲目 ID（仅提供时写回） */
+  neteaseId?: number
+  /** 匹配到的网易云曲目封面，写回后本地歌也能显示专辑图 */
+  coverUrl?: string
+}
+
+/** 写回本地歌曲的在线歌词（按歌名搜索到后绑定 neteaseId + lrc + 封面，避免重复搜索） */
 export async function updateLocalTrackLyric(
   id: string,
-  lrc: string,
-  neteaseId: number,
+  update: LocalTrackLyricUpdate,
 ): Promise<void> {
   const db = await openDb()
   try {
@@ -679,8 +687,9 @@ export async function updateLocalTrackLyric(
           resolve()
           return
         }
-        track.lrc = lrc
-        track.neteaseId = neteaseId
+        if (update.lrc) track.lrc = update.lrc
+        if (update.neteaseId != null) track.neteaseId = update.neteaseId
+        if (update.coverUrl) track.coverUrl = update.coverUrl
         store.put(track)
       }
       req.onerror = () => reject(req.error)

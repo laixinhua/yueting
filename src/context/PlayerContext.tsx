@@ -32,6 +32,8 @@ interface PlayerContextValue {
   setCurrentTab: (tab: TabId) => void
   currentSong: Song
   hasActiveTrack: boolean
+  /** 部分更新当前歌曲（如网 Tradition 拉取后补封面），避免整首替换打断播放 */
+  patchCurrentSong: (patch: Partial<Song>) => void
   playSong: (song: Song, options?: PlayOptions) => void
   playQueueIndex: (index: number) => void
   isPlaying: boolean
@@ -683,6 +685,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setCurrentTab,
       currentSong,
       hasActiveTrack,
+      patchCurrentSong: (patch: Partial<Song>) =>
+        setCurrentSong((prev) => (isEmptyPlaceholder(prev) ? prev : { ...prev, ...patch })),
       playSong,
       playQueueIndex,
       isPlaying: audio.isPlaying,
