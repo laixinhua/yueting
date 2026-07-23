@@ -1,8 +1,11 @@
 import { useBackHandler } from '../context/BackNavigationContext'
 import { useLyricsAlign, type LyricsMode } from '../context/LyricsAlignContext'
+import { usePlayer } from '../context/PlayerContext'
+import { useSongLyrics } from '../hooks/useSongLyrics'
+import { isEmptyPlaceholder } from '../constants/emptySong'
 import { useShellOverlayClass } from '../hooks/useShellOverlay'
 import { BackButton } from './BackButton'
-import { IconChevronLeft } from './icons'
+import { IconChevronLeft, IconReload } from './icons'
 
 interface LyricsSettingsPanelProps {
   onClose: () => void
@@ -16,6 +19,10 @@ const options: { id: LyricsMode; label: string; desc: string }[] = [
 export function LyricsSettingsPanel({ onClose }: LyricsSettingsPanelProps) {
   const { mode, setMode } = useLyricsAlign()
   const shellClass = useShellOverlayClass('above')
+  const { currentSong, duration } = usePlayer()
+  const { reloading, candidates, candidateError, reload, applyCandidate, cancelReload } =
+    useSongLyrics(currentSong, duration)
+  const hasSong = !isEmptyPlaceholder(currentSong)
 
   useBackHandler(true, () => {
     onClose()
@@ -53,6 +60,55 @@ export function LyricsSettingsPanel({ onClose }: LyricsSettingsPanelProps) {
             </button>
           )
         })}
+        <div className="pt-2 mt-2 border-t border-white/5">
+          <p className="text-sm text-white/50 mb-3 mt-4">歌词来源</p>
+          {hasSong ? (
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => void reload()}
+                disabled={reloading}
+                className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-surface-highlight/50 border border-white/5 text-white/90 hover:bg-white/5 disabled:opacity-60 transition-colors"
+              >
+                <IconReload className={`w-5 h-5 ${reloading ? 'animate-spin' : ''}`} />
+                <span>{reloading ? '加载中…' : '重新加载 / 匹配歌词'}</span>
+              </button>
+              {candidateError && !candidates ? (
+                <p className="text-sm text-white/50 text-center">{candidateError}</p>
+              ) : null}
+              {candidates ? (
+                <div className="space-y-2">
+                  <p className="text-xs text-white/40 text-center">选择匹配正确的歌词来源</p>
+                  {candidates.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => void applyCandidate(c.id)}
+                      disabled={reloading}
+                      className="w-full p-3 rounded-xl bg-surface-highlight/40 border border-white/5 text-left hover:bg-white/5 disabled:opacity-60 transition-colors"
+                    >
+                      <p className="text-sm text-white/90 truncate">{c.title}</p>
+                      <p className="text-xs text-white/50 truncate mt-0.5">
+                        {c.artist}
+                        {c.album ? ` · ${c.album}` : ''}
+                      </p>
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => cancelReload()}
+                    className="w-full p-2 rounded-xl text-white/40 hover:text-white/70 text-sm transition-colors"
+                  >
+                    取消
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <p className="text-sm text-white/40">当前没有播放歌曲。</p>
+          )}
+        </div>
+
         {mode === 'alternate' ? (
           <div className="mt-4 p-4 rounded-xl bg-surface-highlight/40 border border-white/5 text-sm text-white/60 space-y-2">
             <p className="text-left text-white/80">窗外的麻雀…</p>
