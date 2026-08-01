@@ -19,7 +19,7 @@ export function MiniPlayer() {
   if (!hasActiveTrack) return null
 
   return (
-    <div className="w-full glass border-t border-white/5 safe-bottom">
+    <div className="w-full glass border-t border-white/5">
       <div className="h-0.5 bg-white/10">
         <div
           className={`h-full bg-white/80 transition-all ${isLoading ? 'animate-pulse' : ''}`}

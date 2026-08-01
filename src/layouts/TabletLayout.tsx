@@ -53,7 +53,7 @@ export function TabletLayout() {
             <ScreenRouter />
           </div>
         </main>
-        <PlaybackBar />
+        <PlaybackBar bottomSafe />
         <PlayerScreen />
         {isQueueOpen ? <QueuePanel /> : null}
       </div>

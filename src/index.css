@@ -68,7 +68,10 @@ body {
 }
 
 .safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* 自适应系统导航栏：--sys-nav-h 由原生实时注入（手势导航=0 保持原样；
+     传统按钮导航=真实系统栏高度，预留间距不再重叠）。切换导航方式无需重启 App，
+     原生 WindowInsets 监听会在用户切换后实时更新该值。 */
+  padding-bottom: var(--sys-nav-h, env(safe-area-inset-bottom, 0px));
 }
 
 .scroll-x-strip {

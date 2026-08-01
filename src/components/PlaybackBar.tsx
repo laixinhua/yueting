@@ -5,7 +5,7 @@ import { AlbumCover } from './AlbumCover'
 import { IconPause, IconPlay, IconQueue } from './icons'
 
 /** 底部播放条：有曲目时显示迷你播放器，否则显示播放队列入口 */
-export function PlaybackBar() {
+export function PlaybackBar({ bottomSafe = false }: { bottomSafe?: boolean }) {
   const {
     currentSong,
     isPlaying,
@@ -20,7 +20,7 @@ export function PlaybackBar() {
 
   if (!hasActiveTrack) {
     return (
-      <div className="w-full glass border-t border-white/5 safe-bottom">
+      <div className={`w-full glass border-t border-white/5${bottomSafe ? ' safe-bottom' : ''}`}>
         <button
           type="button"
           onClick={openQueue}

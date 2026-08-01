@@ -25,7 +25,7 @@ export function TvMiniPlayer() {
 
   if (!hasActiveTrack) {
     return (
-      <div className="shrink-0 glass border-t border-white/10 safe-bottom px-8 py-4">
+      <div className="shrink-0 glass border-t border-white/10 px-8 py-4">
         <button
           type="button"
           onClick={openQueue}
@@ -39,7 +39,7 @@ export function TvMiniPlayer() {
   }
 
   return (
-    <div className="shrink-0 glass border-t border-white/10 safe-bottom px-8 py-5">
+    <div className="shrink-0 glass border-t border-white/10 px-8 py-5">
       <div className="h-1 bg-white/10 rounded-full mb-4 overflow-hidden">
         <div className="h-full bg-white/80 transition-all" style={{ width: `${progress * 100}%` }} />
       </div>
