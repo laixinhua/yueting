@@ -3,6 +3,7 @@ import { fetchNeteaseLyric, fetchNeteaseLyricText } from '../api/neteaseLyric'
 import { EbnrApiError, searchTracks } from '../api/ebnr'
 import type { EbnrTrack } from '../types/ebnr'
 import { updateLocalTrackLyric } from '../utils/localMusicStore'
+import { getLyricPref, saveLyricPref } from '../utils/lyricPrefs'
 import { cacheCoverFromNetwork } from '../utils/coverImageCache'
 import { normalizeImageUrl } from '../utils/imageUrl'
 import { getLyricTrack } from '../data/lyricsTracks'
@@ -83,70 +84,85 @@ export function useSongLyrics(song: Song, audioDuration = 0) {
 
   useEffect(() => {
     let cancelled = false
+    setCandidates(null)
 
-    // 1) 歌词加载：静态 > 缓存 > 按 ID > 本地歌按关键词搜（保持原行为）
+    const pref = getLyricPref(song.id)
+
+    // 1) 静态歌词（内置映射）优先
     const staticTrack = getLyricTrack(song.id)
     if (staticTrack) {
       setTrack(staticTrack)
       setLoading(false)
       setError(null)
-    } else {
-      const cachedLrc = song.lrc?.trim()
-      if (cachedLrc) {
-        setTrack(parseLrcToTrack(cachedLrc, durationForLyrics))
-        setLoading(false)
-        setError(null)
-      }
+      return
+    }
 
-      if (ncmId != null) {
+    // 2) 已保存 / 用户确认过的歌词为权威来源，直接展示，不再联网覆盖
+    //    修复：原逻辑每次播放都重拉并覆盖，导致手动「重新匹配」选对后下次仍变回首条错误匹配
+    const savedLrc = (pref?.lrc ?? song.lrc)?.trim()
+    if (savedLrc) {
+      setTrack(parseLrcToTrack(savedLrc, durationForLyrics))
+      setLoading(false)
+      setError(null)
+      return
+    }
+
+    // 3) 无保存歌词 → 联网解析（默认取第一个匹配），并落库供下次直接使用
+    if (ncmId != null) {
+      setLoading(true)
+      setError(null)
+      void fetchNeteaseLyric(ncmId, durationForLyrics)
+        .then((result) => {
+          if (cancelled) return
+          setTrack(result)
+          if (!result) {
+            setError(null)
+            return
+          }
+          void fetchNeteaseLyricText(ncmId).then((raw) => {
+            if (raw) saveLyricPref(song.id, { neteaseId: ncmId, lrc: raw })
+          })
+        })
+        .catch((err: unknown) => {
+          if (cancelled) return
+          setTrack(null)
+          setError(err instanceof EbnrApiError ? err.message : '歌词加载失败')
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false)
+        })
+    } else if (song.local) {
+      const title = song.title?.trim()
+      if (title) {
         setLoading(true)
         setError(null)
-        void fetchNeteaseLyric(ncmId, durationForLyrics)
-          .then((result) => {
-            if (cancelled) return
-            setTrack(result)
-            if (!result) setError(null)
-          })
-          .catch((err: unknown) => {
-            if (cancelled) return
-            setTrack(null)
-            setError(err instanceof EbnrApiError ? err.message : '歌词加载失败')
-          })
-          .finally(() => {
-            if (!cancelled) setLoading(false)
-          })
-      } else if (song.local) {
-        const title = song.title?.trim()
-        if (title) {
-          setLoading(true)
-          setError(null)
-          void (async () => {
-            try {
-              const tracks = await searchSameSongTracks(title, song.artist, 6)
-              const top = tracks[0]
-              if (!top) {
-                if (!cancelled) setTrack(null)
-                return
-              }
-              const lrcText = await fetchNeteaseLyricText(top.id)
-              if (cancelled) return
-              if (lrcText) {
-                setTrack(parseLrcToTrack(lrcText, durationForLyrics))
-                void updateLocalTrackLyric(song.id, {
-                  lrc: lrcText,
-                  neteaseId: top.id,
-                  coverUrl: normalizeImageUrl(top.album?.cover_url) ?? undefined,
-                })
-              } else if (!cancelled) {
-                setTrack(null)
-              }
-            } catch {
+        void (async () => {
+          try {
+            const tracks = await searchSameSongTracks(title, song.artist, 6)
+            const top = tracks[0]
+            if (!top) {
               if (!cancelled) setTrack(null)
-            } finally {
-              if (!cancelled) setLoading(false)
+              return
             }
-          })()
-        }
+            const lrcText = await fetchNeteaseLyricText(top.id)
+            if (cancelled) return
+            if (lrcText) {
+              setTrack(parseLrcToTrack(lrcText, durationForLyrics))
+              saveLyricPref(song.id, { neteaseId: top.id, lrc: lrcText })
+              void updateLocalTrackLyric(song.id, {
+                lrc: lrcText,
+                neteaseId: top.id,
+                coverUrl: normalizeImageUrl(top.album?.cover_url) ?? undefined,
+              })
+            } else if (!cancelled) {
+              setTrack(null)
+            }
+          } catch {
+            if (!cancelled) setTrack(null)
+          } finally {
+            if (!cancelled) setLoading(false)
+          }
+        })()
       }
     }
 
@@ -194,11 +210,19 @@ export function useSongLyrics(song: Song, audioDuration = 0) {
           setCandidates(mapped)
         }
       } else if (ncmId != null) {
-        const result = await fetchNeteaseLyric(ncmId, durationForLyrics)
-        if (result) {
-          setTrack(result)
+        // 在线/下载歌：按歌名搜候选，允许用户换到正确版本（默认仍走原 ID）
+        const tracks = await searchSameSongTracks(song.title ?? '', song.artist, 20)
+        const mapped: LyricCandidate[] = tracks.slice(0, 6).map((t) => ({
+          id: t.id,
+          title: t.name,
+          artist: t.artists?.map((a) => a.name).filter(Boolean).join(' / ') || '未知歌手',
+          album: t.album?.name,
+          coverUrl: normalizeImageUrl(t.album?.cover_url),
+        }))
+        if (mapped.length === 0) {
+          setCandidateError('没有找到可匹配的歌词')
         } else {
-          setCandidateError('该曲目暂无歌词')
+          setCandidates(mapped)
         }
       } else {
         setCandidateError('暂不支持重新加载')
@@ -223,6 +247,7 @@ export function useSongLyrics(song: Song, audioDuration = 0) {
       const chosen = candidates?.find((c) => c.id === trackId)
       const coverUrl = chosen?.coverUrl ?? undefined
       setTrack(parseLrcToTrack(lrcText, durationForLyrics))
+      saveLyricPref(song.id, { neteaseId: trackId, lrc: lrcText })
       await updateLocalTrackLyric(song.id, {
         lrc: lrcText,
         neteaseId: trackId,
