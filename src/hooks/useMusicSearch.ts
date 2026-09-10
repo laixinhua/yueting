@@ -242,6 +242,9 @@ export async function getSongPlayUrl(song: Song): Promise<string | null> {
 export function getSourceDisplayName(song: Song): string {
   switch (song.source) {
     case 'netease': return '网易云音乐'
+    case 'cc': return 'CC 曲库'
+    case 'itunes': return 'iTunes 试听'
+    case 'local': return '本地音乐'
     default: return '未知来源'
   }
 }
@@ -252,6 +255,8 @@ export function getSourceDisplayName(song: Song): string {
 export function getSourceIconClass(song: Song): string {
   switch (song.source) {
     case 'netease': return 'from-red-500 to-pink-600'
+    case 'cc': return 'from-emerald-500 to-teal-600'
+    case 'itunes': return 'from-indigo-500 to-cyan-600'
     default: return 'from-gray-500 to-gray-600'
   }
 }

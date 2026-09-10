@@ -24,11 +24,20 @@ export class MusicAggregator {
       name: '网易云音乐',
       priority: 1,
       search: async (keyword: string, limit: number) => {
-        console.log('搜索网易云音乐: "' + keyword + '"')
         const { searchTracks } = await import('./ebnr')
         const tracks = await searchTracks(keyword, limit)
         const { ebnrTrackToSong } = await import('../utils/neteaseSong')
         return tracks.map(ebnrTrackToSong)
+      }
+    },
+    {
+      // iTunes 免 Key 官方搜索 API；结果为 30 秒试听直链（previewUrl），固定 20 条、不随 limit 放大
+      name: 'iTunes',
+      priority: 2,
+      search: async (keyword: string) => {
+        const { searchItunes, itunesTrackToSong } = await import('./itunesMusic')
+        const tracks = await searchItunes(keyword, 20)
+        return tracks.map(itunesTrackToSong)
       }
     }
   ]
@@ -39,38 +48,28 @@ export class MusicAggregator {
   async searchAll(keyword: string, limit = 30): Promise<AggregatedSearchResult> {
     const resultSongs: Song[] = []
     const usedSources = new Set<string>()
-    
-    console.log(`【音乐聚合器】开始搜索关键词: "${keyword}"，限制: ${limit}`)
-    
+
     // 按优先级对来源排序
     const sortedSources = [...this.sources].sort((a, b) => a.priority - b.priority)
-    
+
     // 并发搜索所有源（当前仅网易云音乐）
     const searchPromises = sortedSources.map(async (source) => {
       try {
-        console.log(`【音乐聚合器】正在搜索源: ${source.name}`)
         const songs = await source.search(keyword, limit)
-        console.log(`【音乐聚合器】${source.name} 搜索完成，获取到 ${songs.length} 首歌曲`)
-        
         const normalizedSongs = this.normalizeSongs(songs, source.name)
         // 不去重：各音源同名歌视为不同版本（不同音质/来源），全部保留并展示
         resultSongs.push(...normalizedSongs)
-        
         usedSources.add(source.name)
         return { success: true, source: source.name, count: songs.length }
-       } catch (error) {
-         console.warn(`【音乐聚合器】${source.name}搜索失败:`, { source: source.name, error })
-         return { success: false, source: source.name, error }
-       }
+      } catch (error) {
+        console.warn(`【音乐聚合器】${source.name}搜索失败:`, { source: source.name, error })
+        return { success: false, source: source.name, error }
+      }
     })
-    
-    const results = await Promise.all(searchPromises)
+
+    await Promise.all(searchPromises)
     const sortedSongs = this.sortSongsByRelevance(resultSongs, keyword)
-    
-    console.log(`【音乐聚合器】搜索完成，共获取 ${sortedSongs.length} 首歌曲（不去重，按来源全量返回）`)
-    console.log(`【音乐聚合器】使用的数据源: ${Array.from(usedSources).join(', ')}`)
-    console.log(`【音乐聚合器】各源详细结果:`, results)
-    
+
     return {
       songs: sortedSongs,
       sources: Array.from(usedSources),

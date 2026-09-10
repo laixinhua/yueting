@@ -61,7 +61,7 @@ export function SearchResultsScreen({ query, onClose }: SearchResultsScreenProps
   // 结果中实际出现的音源（用于顶部提示，如「网易云音乐」）
   const resultSourceLabels = Array.from(
     new Set(onlineSongs.map((s) => s.source || 'netease')),
-  ).map((s) => (s === 'netease' ? '网易云音乐' : s))
+  ).map((s) => (s === 'netease' ? '网易云音乐' : s === 'itunes' ? 'iTunes 试听' : s))
 
   const showLocalFallback =
     !loading &&
