@@ -88,17 +88,16 @@ export const NETEASE_HOT_SOURCES = [
   { id: 3779629, name: '新歌榜' },
 ] as const
 
-/** 搜索页热搜词（点击直接搜索） */
-export const HOT_SEARCH_KEYWORDS = [
-  '周杰伦',
-  '林俊杰',
-  '邓紫棋',
-  '薛之谦',
-  '毛不易',
-  '陈奕迅',
-  '李荣浩',
-  '五月天',
+/** 搜索页热搜词（点击直接搜索），多组真实华语歌手词池供「换一换」轮换 */
+export const HOT_SEARCH_POOLS = [
+  ['周杰伦', '林俊杰', '邓紫棋', '薛之谦', '毛不易', '陈奕迅', '李荣浩', '五月天'],
+  ['周深', '蔡徐坤', '王力宏', '梁静茹', '张杰', '华晨宇', '萧敬腾', '孙燕姿'],
+  ['林宥嘉', '杨宗纬', '告五人', '房东的猫', '郁可唯', '张信哲', '李健', '朴树'],
+  ['任贤齐', '刘德华', '张学友', '王菲', '梅艳芳', 'Beyond', '李宗盛', '罗大佑'],
 ] as const
+
+/** 兼容旧引用：默认展示第一组词 */
+export const HOT_SEARCH_KEYWORDS: readonly string[] = HOT_SEARCH_POOLS[0]!
 
 export function neteasePlaylistId(id: number): string {
   return `ncm-pl-${id}`

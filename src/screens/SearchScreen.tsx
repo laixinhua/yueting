@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { HOT_SEARCH_KEYWORDS } from '../data/neteaseCharts'
+import { HOT_SEARCH_POOLS } from '../data/neteaseCharts'
 import { useSongCatalog } from '../context/SongCatalogContext'
 import { usePlayer } from '../context/PlayerContext'
 import { useNeteaseHotSongs } from '../hooks/useNeteaseHotSongs'
@@ -19,6 +19,10 @@ export function SearchScreen() {
   const { songs: hotSongs, loading: hotLoading, error: hotError, refresh: refreshHot } = useNeteaseHotSongs()
   const [draftQuery, setDraftQuery] = useState('')
   const [resultsQuery, setResultsQuery] = useState<string | null>(null)
+  /** 热搜词组池索引（「换一换」轮换） */
+  const [hotPoolIndex, setHotPoolIndex] = useState(0)
+  const hotKeywords = HOT_SEARCH_POOLS[hotPoolIndex % HOT_SEARCH_POOLS.length] ?? HOT_SEARCH_POOLS[0]!
+  const refreshHotKeywords = () => setHotPoolIndex((i) => (i + 1) % HOT_SEARCH_POOLS.length)
 
   useEffect(() => {
     if (hotSongs.length > 0) upsertNeteaseSongs(hotSongs)
@@ -60,10 +64,10 @@ export function SearchScreen() {
         </form>
       </header>
 
-      <section className="px-4 mb-8">
-        <h2 className="text-sm font-medium text-white/50 mb-3">热搜</h2>
-        <div className="flex flex-wrap gap-2">
-          {HOT_SEARCH_KEYWORDS.map((keyword) => (
+      <section className="mb-8">
+        <SectionHeader title="热搜" action="换一换" onAction={refreshHotKeywords} />
+        <div className="flex flex-wrap gap-2 px-4">
+          {hotKeywords.map((keyword) => (
             <button
               key={keyword}
               type="button"
