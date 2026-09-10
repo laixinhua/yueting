@@ -1,5 +1,6 @@
 import { formatDuration } from '../data/mockData'
 import { usePlayer } from '../context/PlayerContext'
+import { usePlayerProgress } from '../hooks/usePlayerProgress'
 import { sanitizeMusicMeta } from '../utils/musicMeta'
 import { AlbumCover } from './AlbumCover'
 import { IconPause, IconPlay } from './icons'
@@ -11,11 +12,11 @@ export function MiniPlayer() {
     isLoading,
     togglePlay,
     openPlayer,
-    progress,
     hasActiveTrack,
     sleepTimerActive,
     sleepTimerRemainingLabel,
   } = usePlayer()
+  const { progress } = usePlayerProgress()
   if (!hasActiveTrack) return null
 
   return (

@@ -16,6 +16,36 @@ function isAppBackground(appInBackground: boolean): boolean {
   return appInBackground || document.hidden
 }
 
+export interface PlayerProgress {
+  currentTime: number
+  duration: number
+  progress: number
+}
+
+let progressSnapshot: PlayerProgress = { currentTime: 0, duration: 0, progress: 0 }
+const progressListeners = new Set<() => void>()
+
+function emitProgress(currentTime: number, duration: number) {
+  const dur = Number.isFinite(duration) && duration > 0 ? duration : 0
+  progressSnapshot = {
+    currentTime,
+    duration: dur,
+    progress: dur > 0 ? currentTime / dur : 0,
+  }
+  progressListeners.forEach((l) => l())
+}
+
+export function subscribeProgress(cb: () => void) {
+  progressListeners.add(cb)
+  return () => {
+    progressListeners.delete(cb)
+  }
+}
+
+export function getProgressSnapshot() {
+  return progressSnapshot
+}
+
 export function useAudioPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const onEndedRef = useRef<(() => void) | null>(null)
@@ -39,6 +69,11 @@ export function useAudioPlayer() {
   const [error, setError] = useState<string | null>(null)
   /** 同一播放尝试只上报一次错误，避免「该歌曲暂无法播放」与「网络错误」叠加成两条提示 */
   const errorShownSessionRef = useRef(false)
+
+  // 进度外部 store：供进度条等高频订阅者使用，避免 currentTime 走 PlayerContext 造成 60fps 全局重渲染
+  useEffect(() => {
+    emitProgress(currentTime, duration)
+  }, [currentTime, duration])
 
   const cancelNativeTrackEnd = useCallback(() => {
     nativeEndScheduledAtRef.current = 0

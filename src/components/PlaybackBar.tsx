@@ -1,5 +1,6 @@
 import { formatDuration } from '../data/mockData'
 import { usePlayer } from '../context/PlayerContext'
+import { usePlayerProgress } from '../hooks/usePlayerProgress'
 import { formatSongSubtitle } from '../utils/musicMeta'
 import { AlbumCover } from './AlbumCover'
 import { IconPause, IconPlay, IconQueue } from './icons'
@@ -13,10 +14,10 @@ export function PlaybackBar({ bottomSafe = false }: { bottomSafe?: boolean }) {
     togglePlay,
     openPlayer,
     openQueue,
-    progress,
     hasActiveTrack,
     queue,
   } = usePlayer()
+  const { progress } = usePlayerProgress()
 
   if (!hasActiveTrack) {
     return (

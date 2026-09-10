@@ -1,4 +1,5 @@
 import { usePlayer } from '../context/PlayerContext'
+import { usePlayerProgress } from '../hooks/usePlayerProgress'
 import { AlbumCover } from './AlbumCover'
 import {
   IconPause,
@@ -18,10 +19,10 @@ export function TvMiniPlayer() {
     playPrevious,
     openPlayer,
     openQueue,
-    progress,
     hasActiveTrack,
     queue,
   } = usePlayer()
+  const { progress } = usePlayerProgress()
 
   if (!hasActiveTrack) {
     return (

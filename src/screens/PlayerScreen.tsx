@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useBackHandler } from '../context/BackNavigationContext'
 import { useFavoritesContext } from '../context/FavoritesContext'
 import { usePlayer } from '../context/PlayerContext'
+import { usePlayerProgress } from '../hooks/usePlayerProgress'
 import { sanitizeMusicMeta } from '../utils/musicMeta'
 import { BackButton } from '../components/BackButton'
 import { AlbumCover } from '../components/AlbumCover'
@@ -35,8 +36,6 @@ export function PlayerScreen() {
     playNext,
     playPrevious,
     closePlayer,
-    progress,
-    currentTime,
     duration,
     seek,
     isPlayerOpen,
@@ -47,6 +46,7 @@ export function PlayerScreen() {
     playMode,
     cyclePlayMode,
   } = usePlayer()
+  const { currentTime, progress } = usePlayerProgress()
   const { isFavorite, toggleFavorite } = useFavoritesContext()
   const [menuOpen, setMenuOpen] = useState(false)
 

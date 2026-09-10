@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useLyricsAlign } from '../context/LyricsAlignContext'
 import { usePlayer } from '../context/PlayerContext'
+import { usePlayerProgress } from '../hooks/usePlayerProgress'
 import { useSongLyrics } from '../hooks/useSongLyrics'
 import { findActiveLineIndex, toLyricTimeline } from '../utils/lyricsTiming'
 import { isNeteaseSong } from '../utils/neteaseSong'
@@ -28,7 +29,8 @@ function slotIndices(activeIndex: number, total: number): (number | null)[] {
 
 export function InlineLyrics({ song }: InlineLyricsProps) {
   const { mode } = useLyricsAlign()
-  const { currentTime, duration } = usePlayer()
+  const { duration } = usePlayer()
+  const { currentTime } = usePlayerProgress()
   const { track, loading, error } = useSongLyrics(song, duration)
 
   const lyricTime = useMemo(() => {

@@ -52,8 +52,6 @@ interface PlayerContextValue {
   isLyricsOpen: boolean
   openLyrics: () => void
   closeLyrics: () => void
-  progress: number
-  currentTime: number
   duration: number
   seek: (ratio: number) => void
   queue: Song[]
@@ -677,7 +675,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const hasActiveTrack = !isEmptyPlaceholder(currentSong)
   const duration = audio.duration > 0 ? audio.duration : currentSong.duration
-  const progress = duration > 0 ? audio.currentTime / duration : 0
 
   const value = useMemo<PlayerContextValue>(
     () => ({
@@ -709,8 +706,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       isLyricsOpen,
       openLyrics: () => setIsLyricsOpen(true),
       closeLyrics: () => setIsLyricsOpen(false),
-      progress,
-      currentTime: audio.currentTime,
       duration,
       seek: audio.seek,
       queue,
@@ -741,14 +736,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       audio.isLoading,
       audio.error,
       dismissError,
-      audio.currentTime,
       togglePlay,
       playNext,
       playPrevious,
       isPlayerOpen,
       isQueueOpen,
       isLyricsOpen,
-      progress,
       duration,
       audio.seek,
       queue,
