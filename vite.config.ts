@@ -45,11 +45,6 @@ export default defineConfig(({ mode }) => ({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/netease-lyric/, '/music'),
       },
-      '/api/music-aggregator': {
-        target: 'https://api.qq.jsososo.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/music-aggregator/, ''),
-      },
     },
   },
   preview: {
@@ -65,11 +60,6 @@ export default defineConfig(({ mode }) => ({
         target: 'https://apis.netstart.cn',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/netease-lyric/, '/music'),
-      },
-      '/api/music-aggregator': {
-        target: 'https://api.qq.jsososo.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/music-aggregator/, ''),
       },
     },
   },
