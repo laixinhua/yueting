@@ -5,7 +5,6 @@ interface KaraokeLineProps {
   line: LyricLine
   lyricTime: number
   isCurrentLine: boolean
-  isPastLine: boolean
   className?: string
 }
 
@@ -22,7 +21,6 @@ export function KaraokeLine({
   line,
   lyricTime,
   isCurrentLine,
-  isPastLine: _isPastLine,
   className = '',
 }: KaraokeLineProps) {
   const text = line.text

@@ -1,4 +1,4 @@
-import type { Song, SongSource } from '../types'
+import type { Song } from '../types'
 
 export interface SearchSource {
   name: string
@@ -56,7 +56,7 @@ export class MusicAggregator {
     const searchPromises = sortedSources.map(async (source) => {
       try {
         const songs = await source.search(keyword, limit)
-        const normalizedSongs = this.normalizeSongs(songs, source.name)
+        const normalizedSongs = this.normalizeSongs(songs)
         // 不去重：各音源同名歌视为不同版本（不同音质/来源），全部保留并展示
         resultSongs.push(...normalizedSongs)
         usedSources.add(source.name)
@@ -91,7 +91,7 @@ export class MusicAggregator {
       const tracks = await searchTracks('热门', limit)
       const songs = tracks.map(ebnrTrackToSong)
       
-      const normalizedSongs = this.normalizeSongs(songs, '网易云音乐')
+      const normalizedSongs = this.normalizeSongs(songs)
       
       // 去重
       for (const song of normalizedSongs) {
@@ -118,23 +118,24 @@ export class MusicAggregator {
     return null
   }
   
-  private normalizeSongs(songs: Song[], source: string): Song[] {
+  private normalizeSongs(songs: Song[]): Song[] {
     return songs.map(song => ({
       ...song,
       title: this.cleanTitle(song.title),
       artist: this.cleanArtist(song.artist),
-      source: song.source || this.getSourceFromName(source),
-      gradient: song.gradient || this.getGradientBySource(source)
+      // 各源（ebnr/itunes）映射时已带 source/gradient，这里仅为缺失时兜底
+      source: song.source ?? 'netease',
+      gradient: song.gradient || 'from-red-500 via-pink-500 to-purple-600'
     }))
   }
-  
+
   private getSongKey(song: Song): string {
     // 基于歌名和歌手去重
     const cleanTitle = this.cleanTitle(song.title).toLowerCase().replace(/\s+/g, '')
     const cleanArtist = this.cleanArtist(song.artist).toLowerCase().replace(/\s+/g, '')
     return `${cleanTitle}_${cleanArtist}`
   }
-  
+
   private cleanTitle(title: string): string {
     return title
       .replace(/\(.*?\)/g, '')  // 移除括号内容
@@ -143,21 +144,13 @@ export class MusicAggregator {
       .replace(/\s+/g, ' ')    // 多个空格合并
       .trim()
   }
-  
+
   private cleanArtist(artist: string): string {
     return artist
       .replace(/&/g, ',')
       .replace(/\s+/g, ' ')
       .split(',')[0]  // 只取第一个歌手
       .trim()
-  }
-  
-  private getSourceFromName(_sourceName: string): SongSource {
-    return 'netease'
-  }
-  
-  private getGradientBySource(_sourceName: string): string {
-    return 'from-red-500 via-pink-500 to-purple-600'  // 网易云
   }
   
   private sortSongsByRelevance(songs: Song[], query: string): Song[] {

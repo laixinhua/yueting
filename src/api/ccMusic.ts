@@ -43,6 +43,21 @@ function buildSearchUrl(query: string, limit: number): string {
   return `${JAMENDO}/tracks/?${params.toString()}`
 }
 
+interface JamendoDoc {
+  id?: string | number
+  name?: string
+  artist_name?: string
+  audio?: string
+  image?: string
+  duration?: number | string
+}
+
+interface JamendoResponse {
+  headers?: { status?: string; code?: number }
+  results?: JamendoDoc[]
+  results_count?: number
+}
+
 /** 搜索 / 浏览 CC 曲库（Jamendo），返回含可播放直链的曲目列表 */
 export async function searchCcMusic(query: string, limit = 24): Promise<CcTrack[]> {
   const url = buildSearchUrl(query, limit)
@@ -55,21 +70,17 @@ export async function searchCcMusic(query: string, limit = 24): Promise<CcTrack[
   if (res.status < 200 || res.status >= 300) {
     throw new Error(`CC 曲库请求失败（${res.status}）`)
   }
-  const data = parseBody(res.data) as {
-    headers?: { status?: string; code?: number }
-    results?: any[]
-    results_count?: number
-  }
+  const data = parseBody(res.data) as JamendoResponse
   if ((data.headers?.code ?? 0) !== 0) {
     throw new Error(`CC 曲库 API 错误：${data.headers?.status ?? '未知'}`)
   }
-  const docs: any[] = data?.results ?? []
+  const docs = data?.results ?? []
   return docs
-    .filter(d => d && d.id && d.name && d.audio)
+    .filter(d => d && d.id != null && d.name && d.audio)
     .map((d): CcTrack => ({
       id: String(d.id),
-      title: d.name,
-      artist: String(d.artist_name ?? '未知艺术家'),
+      title: d.name!,
+      artist: d.artist_name ?? '未知艺术家',
       url: d.audio || '',
       coverUrl: d.image || '',
       duration: typeof d.duration === 'number' ? Math.round(d.duration) : 0,

@@ -32,7 +32,7 @@ interface PlayerContextValue {
   setCurrentTab: (tab: TabId) => void
   currentSong: Song
   hasActiveTrack: boolean
-  /** 部分更新当前歌曲（如网 Tradition 拉取后补封面），避免整首替换打断播放 */
+  /** 部分更新当前歌曲（如网易云拉取后补封面），避免整首替换打断播放 */
   patchCurrentSong: (patch: Partial<Song>) => void
   playSong: (song: Song, options?: PlayOptions) => void
   playQueueIndex: (index: number) => void
@@ -95,17 +95,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [isLyricsOpen, setIsLyricsOpen] = useState(false)
   const [autoPlayNext, setAutoPlayNext] = useState(true)
   const [playMode, setPlayMode] = useState<PlayMode>('loop')
-  const initialEndsAt = loadSleepTimerEndsAt()
-  const [sleepTimerKind, setSleepTimerKind] = useState<SleepTimerKind>(
-    initialEndsAt != null ? 'minutes' : 'off',
-  )
-  const [sleepTimerEndsAt, setSleepTimerEndsAt] = useState<number | null>(initialEndsAt)
+  // 惰性初始化：首次渲染读一次持久化的睡眠定时（清理过期记录），之后不再读 localStorage
+  const [sleepTimerKind, setSleepTimerKind] = useState<SleepTimerKind>(() => {
+    const endsAt = loadSleepTimerEndsAt()
+    return endsAt != null ? 'minutes' : 'off'
+  })
+  const [sleepTimerEndsAt, setSleepTimerEndsAt] = useState<number | null>(() => loadSleepTimerEndsAt())
   const [sleepTimerRemainingSec, setSleepTimerRemainingSec] = useState(() =>
-    initialEndsAt != null ? Math.max(0, Math.ceil((initialEndsAt - Date.now()) / 1000)) : 0,
+    sleepTimerEndsAt != null ? Math.max(0, Math.ceil((sleepTimerEndsAt - Date.now()) / 1000)) : 0,
   )
   const [sleepTimerMinutesPlanned, setSleepTimerMinutesPlanned] = useState<number | null>(() => {
-    if (initialEndsAt == null) return null
-    const sec = Math.max(0, Math.ceil((initialEndsAt - Date.now()) / 1000))
+    if (sleepTimerEndsAt == null) return null
+    const sec = Math.max(0, Math.ceil((sleepTimerEndsAt - Date.now()) / 1000))
     const match = [15, 30, 45, 60, 90].find((m) => Math.abs(m * 60 - sec) < 120)
     return match ?? null
   })

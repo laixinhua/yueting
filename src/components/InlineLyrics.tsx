@@ -88,17 +88,12 @@ export function InlineLyrics({ song }: InlineLyricsProps) {
         ? `max-w-[88%] w-full ${onLeft ? 'self-start text-left pl-1' : 'self-end text-right pr-1'}`
         : 'w-full text-center'
 
-    const isCurrent = i === activeIndex
-    const isPast = activeIndex >= 0 && i < activeIndex
-    const isUpcoming = activeIndex < 0 && i === 0
-
     return (
       <div key={`${song.id}-${i}`} className={wrapClass}>
         <KaraokeLine
           line={line}
           lyricTime={lyricTime}
-          isCurrentLine={isCurrent}
-          isPastLine={isPast || isUpcoming}
+          isCurrentLine={i === activeIndex}
           className={lineClass(i)}
         />
       </div>
